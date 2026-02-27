@@ -3,12 +3,6 @@ extends "res://singletons/run_data.gd"
 const DISSONANCE_LOG = "RyehJael-Dissonance"
 var composer_level_shift_hash = Keys.generate_hash("effect_composer_level_shift")
 
-func init_effects()->Dictionary:
-	return Utils.merge_dictionaries(.init_effects(), {
-		composer_level_shift_hash: 0
-	})
-
-
 func level_up(player_index: int) -> void:
 	.level_up(player_index)
 
@@ -19,7 +13,10 @@ func level_up(player_index: int) -> void:
 
 
 func _composer_has_level_shift_effect(player_index: int) -> bool:
-	return RunData.get_player_effect(composer_level_shift_hash, player_index) > 0
+	var effects = RunData.get_player_effects(player_index)
+	if not effects.has(composer_level_shift_hash):
+		effects[composer_level_shift_hash] = 0
+	return effects[composer_level_shift_hash] > 0
 
 
 func _apply_composer_level_shift(player_index: int) -> void:

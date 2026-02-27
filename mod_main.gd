@@ -13,6 +13,7 @@ func _init():
 	ext_dir = dir + "extensions/"
 
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/run_data.gd")
+	ModLoaderMod.install_script_extension(ext_dir + "singletons/player_run_data.gd")
 
 
 func _ready()->void:
