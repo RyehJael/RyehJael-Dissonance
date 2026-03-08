@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/composer_icon.png-3bbfa5afd2046fc6df50fa29070813c6.stex"
+path="res://.import/baton_icon.png-8c2476b5f4e38c81a6089176154c8fbd.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://mods-unpacked/RyehJael-Dissonance/content/characters/composer/composer_icon.png"
-dest_files=[ "res://.import/composer_icon.png-3bbfa5afd2046fc6df50fa29070813c6.stex" ]
+source_file="res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/baton_icon.png"
+dest_files=[ "res://.import/baton_icon.png-8c2476b5f4e38c81a6089176154c8fbd.stex" ]
 
 [params]
 

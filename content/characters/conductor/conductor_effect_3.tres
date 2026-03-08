@@ -4,9 +4,9 @@
 
 [resource]
 script = ExtResource( 1 )
-key = "effect_composer_level_shift"
-text_key = "EFFECT_COMPOSER_LEVEL_SHIFT"
-value = 1
+key = "next_level_xp_needed"
+text_key = ""
+value = -50
 custom_key = ""
 storage_method = 0
 effect_sign = 0

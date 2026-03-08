@@ -2,7 +2,7 @@
 	"name": "Dissonance",
 	"namespace": "RyehJael",
 	"version_number": "1.0.0",
-	"description": "Adds the Composer character.",
+	"description": "Adds the Conductor character.",
 	"website_url": "https://github.com/BrotatoMods",
 	"dependencies": [
 		"Darkly77-ContentLoader"
