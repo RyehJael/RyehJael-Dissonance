@@ -12,7 +12,6 @@
 script = ExtResource( 1 )
 my_id = "weapon_baton_1"
 unlocked_by_default = false
-can_be_looted = true
 icon = ExtResource( 2 )
 name = "WEAPON_BATON"
 tier = 0
@@ -29,4 +28,4 @@ sets = [ ExtResource( 7 ) ]
 scene = ExtResource( 4 )
 stats = ExtResource( 3 )
 upgrades_into = ExtResource( 5 )
-add_to_chars_as_starting = [  ]
+add_to_chars_as_starting = [ "character_conductor", "character_well_rounded", "character_multitasker" ]

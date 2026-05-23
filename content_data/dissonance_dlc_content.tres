@@ -1,0 +1,19 @@
+[gd_resource type="Resource" load_steps=8 format=2]
+
+[ext_resource path="res://mods-unpacked/Darkly77-ContentLoader/content_data.gd" type="Script" id=1]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/characters/conductor/conductor_data.tres" type="Resource" id=2]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/1/baton_data.tres" type="Resource" id=3]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/2/baton_2_data.tres" type="Resource" id=4]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/3/baton_3_data.tres" type="Resource" id=5]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/4/baton_4_data.tres" type="Resource" id=6]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_conductor.tres" type="Resource" id=7]
+
+[resource]
+script = ExtResource( 1 )
+items = [  ]
+weapons = [ ExtResource( 3 ), ExtResource( 4 ), ExtResource( 5 ), ExtResource( 6 ) ]
+characters = [  ]
+weapons_characters = [ [ ExtResource( 2 ) ], [  ], [  ], [  ] ]
+debug_items = [  ]
+sets = [  ]
+challenges = [ ExtResource( 7 ) ]

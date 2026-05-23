@@ -7,7 +7,7 @@
 [resource]
 script = ExtResource( 1 )
 my_id = "chal_conductor"
-unlocked_by_default = true
+unlocked_by_default = false
 icon = ExtResource( 2 )
 name = "CHARACTER_CONDUCTOR"
 tier = 0
