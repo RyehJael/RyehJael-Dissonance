@@ -4,9 +4,9 @@
 
 [resource]
 script = ExtResource( 1 )
-key = "effect_siren_spawn_cursed_enemy_from_range"
+key = "effect_siren_spawn_cursed_enemy"
 text_key = "EFFECT_SIREN_SPAWN_CURSED_ENEMY"
-value = 3
+value = 1
 custom_key = ""
 storage_method = 0
 effect_sign = 0

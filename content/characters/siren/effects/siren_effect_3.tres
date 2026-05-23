@@ -1,6 +1,6 @@
 [gd_resource type="Resource" load_steps=2 format=2]
 
-[ext_resource path="res://effects/items/stat_gains_modification_effect.gd" type="Script" id=1]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/characters/siren/siren_safe_stat_gains_modification_effect.gd" type="Script" id=1]
 
 [resource]
 script = ExtResource( 1 )

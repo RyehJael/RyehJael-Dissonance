@@ -3,6 +3,70 @@ extends "res://singletons/run_data.gd"
 const DISSONANCE_LOG = "RyehJael-Dissonance"
 var conductor_level_shift_hash = Keys.generate_hash("effect_conductor_level_shift")
 
+
+func get_player_effects(player_index: int) -> Dictionary:
+	if player_index == DUMMY_PLAYER_INDEX:
+		return _get_dissonance_dummy_player_effects()
+	if player_index < 0 or player_index >= players_data.size():
+		return _get_dissonance_dummy_player_effects()
+	return .get_player_effects(player_index)
+
+
+func get_player_character(player_index: int) -> CharacterData:
+	if not _is_dissonance_valid_player_index(player_index):
+		if players_data.size() > 0:
+			return players_data[0].current_character
+		return null
+	return .get_player_character(player_index)
+
+
+func get_player_effect(key: int, player_index: int):
+	var effects = get_player_effects(player_index)
+	if not effects.has(key):
+		return 0
+	return effects[key]
+
+
+func add_character(character: CharacterData, player_index: int) -> void:
+	if not _is_dissonance_valid_player_index(player_index):
+		return
+	.add_character(character, player_index)
+
+
+func add_item(item: ItemData, player_index: int, is_selection: bool = false) -> void:
+	if not _is_dissonance_valid_player_index(player_index):
+		return
+	.add_item(item, player_index, is_selection)
+
+
+func add_weapon(weapon: WeaponData, player_index: int, is_starting_weapon: bool = false):
+	if not _is_dissonance_valid_player_index(player_index):
+		return null
+	return .add_weapon(weapon, player_index, is_starting_weapon)
+
+
+func apply_item_effects(item_data: ItemParentData, player_index: int) -> void:
+	if not _is_dissonance_valid_player_index(player_index):
+		return
+	.apply_item_effects(item_data, player_index)
+
+
+func unapply_item_effects(item_data: ItemParentData, player_index: int) -> void:
+	if not _is_dissonance_valid_player_index(player_index):
+		return
+	.unapply_item_effects(item_data, player_index)
+
+
+func _get_dissonance_dummy_player_effects() -> Dictionary:
+	if dummy_player_effects == null:
+		dummy_player_effects = PlayerRunData.init_effects()
+	return dummy_player_effects
+
+
+func _is_dissonance_valid_player_index(player_index: int) -> bool:
+	return player_index >= 0 and player_index < players_data.size()
+
+
 func level_up(player_index: int) -> void:
 	.level_up(player_index)
 

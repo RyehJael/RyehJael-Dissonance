@@ -7,7 +7,7 @@ const SIREN_CURSE_DAMAGE_BOOST = 50
 const SIREN_CURSE_SPEED_BOOST = 75
 const SIREN_MAX_CURSE_HP_BOOST = 300
 
-var _siren_spawn_cursed_enemy_hash = Keys.generate_hash("effect_siren_spawn_cursed_enemy_from_range")
+var _siren_spawn_cursed_enemy_hash = Keys.generate_hash("effect_siren_spawn_cursed_enemy")
 var _siren_bonus_materials_hash = Keys.generate_hash("effect_siren_bonus_materials_from_cursed_enemies")
 var _siren_curse_enemy_effect_behavior_data: Resource = null
 
@@ -37,12 +37,11 @@ func _try_spawn_siren_cursed_enemy(enemy: Enemy, args: Entity.DieArgs) -> void:
 	if not _is_valid_siren_player_index(player_index):
 		return
 
-	var chance_factor = _get_siren_player_effect(_siren_spawn_cursed_enemy_hash, player_index)
-	if chance_factor <= 0:
+	var chance_percent = _get_siren_player_effect(_siren_spawn_cursed_enemy_hash, player_index)
+	if chance_percent <= 0:
 		return
 
-	var range_stat = max(0.0, Utils.get_stat(Keys.stat_range_hash, player_index))
-	var spawn_chance = clamp(range_stat * chance_factor / 10000.0, 0.0, 1.0)
+	var spawn_chance = clamp(chance_percent / 100.0, 0.0, 1.0)
 	if not Utils.get_chance_success(spawn_chance):
 		return
 
