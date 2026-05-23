@@ -6,18 +6,23 @@ const SIREN_CURSE_HP_BOOST = 200
 const SIREN_CURSE_DAMAGE_BOOST = 50
 const SIREN_CURSE_SPEED_BOOST = 75
 const SIREN_MAX_CURSE_HP_BOOST = 300
-const SIREN_RANGE_CHANCE_SCALING = 0.03
+const SIREN_RANGE_CHANCE_SCALING = 0.04
 const SIREN_MIN_SPAWN_DIST_FROM_PLAYER = 300
+const AEONIAN_MAX_HP_PER_EXTRA_SECOND = 10
+const AEONIAN_EXTRA_TIME_COLOR = Color.deepskyblue
 
 var _siren_spawn_cursed_enemy_hash = Keys.generate_hash("effect_siren_spawn_cursed_enemy")
 var _siren_bonus_materials_hash = Keys.generate_hash("effect_siren_bonus_materials_from_cursed_enemies")
 var _siren_character_hash = Keys.generate_hash("character_siren")
+var _aeonian_round_duration_hash = Keys.generate_hash("effect_aeonian_round_duration_per_max_hp")
 var _siren_curse_enemy_effect_behavior_data: Resource = null
 var _pending_siren_spawn_sources := {}
+var _aeonian_round_duration_bonus = 0
 
 
 func _ready() -> void:
 	_siren_curse_enemy_effect_behavior_data = load(CURSE_ENEMY_EFFECT_BEHAVIOR_PATH)
+	call_deferred("_apply_aeonian_round_duration_bonus")
 
 
 func _on_enemy_died(enemy: Enemy, args: Entity.DieArgs) -> void:
@@ -160,6 +165,52 @@ func _get_siren_spawn_cursed_enemy_chance(player_index: int) -> float:
 		return 0.0
 	var range_bonus = max(0.0, Utils.get_stat(Keys.stat_range_hash, player_index) * SIREN_RANGE_CHANCE_SCALING)
 	return base_chance + range_bonus
+
+
+func _apply_aeonian_round_duration_bonus() -> void:
+	if _cleaning_up or _wave_timer == null:
+		return
+
+	_aeonian_round_duration_bonus = _get_aeonian_round_duration_bonus()
+	if _aeonian_round_duration_bonus <= 0:
+		return
+
+	var current_time_left = _wave_timer.time_left
+	_wave_timer.wait_time += _aeonian_round_duration_bonus
+	if not _wave_timer.is_stopped():
+		_wave_timer.start(max(0.1, current_time_left + _aeonian_round_duration_bonus))
+	_schedule_aeonian_extra_time_color(current_time_left)
+
+
+func _schedule_aeonian_extra_time_color(base_time_left: float) -> void:
+	if base_time_left <= 0.1:
+		call_deferred("_on_aeonian_extra_time_started")
+		return
+
+	var extra_time_timer = get_tree().create_timer(base_time_left, false)
+	extra_time_timer.connect("timeout", self, "_on_aeonian_extra_time_started")
+
+
+func _on_aeonian_extra_time_started() -> void:
+	if _cleaning_up or _wave_timer == null or _wave_timer_label == null:
+		return
+	if not is_instance_valid(_wave_timer) or not is_instance_valid(_wave_timer_label):
+		return
+	if _aeonian_round_duration_bonus <= 0 or _wave_timer.is_stopped():
+		return
+
+	_wave_timer_label.change_color(AEONIAN_EXTRA_TIME_COLOR)
+
+
+func _get_aeonian_round_duration_bonus() -> int:
+	var duration_bonus = 0
+	for player_index in RunData.get_player_count():
+		var seconds_per_chunk = _get_siren_player_effect(_aeonian_round_duration_hash, player_index)
+		if seconds_per_chunk <= 0:
+			continue
+		var max_hp = max(0.0, RunData.get_stat(Keys.stat_max_hp_hash, player_index))
+		duration_bonus += int(floor(max_hp / float(AEONIAN_MAX_HP_PER_EXTRA_SECOND))) * seconds_per_chunk
+	return duration_bonus
 
 
 func _is_cursed_enemy(unit: Unit) -> bool:

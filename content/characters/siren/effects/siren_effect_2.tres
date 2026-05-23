@@ -4,8 +4,8 @@
 
 [resource]
 script = ExtResource( 1 )
-key = "gold_on_cursed_enemy_kill"
-text_key = "EFFECT_GOLD_ON_CURSED_ENEMY_KILL"
+key = "effect_siren_bonus_materials_from_cursed_enemies"
+text_key = "EFFECT_SIREN_CURSED_ENEMY_EXTRA_MATERIAL"
 value = 1
 custom_key = ""
 storage_method = 0

@@ -20,6 +20,8 @@ func _init():
 		"EFFECT_SIREN_SPAWN_CURSED_ENEMY": "On enemy kill: {0}% chance to spawn a cursed enemy ({1})",
 		"EFFECT_SIREN_CURSED_ENEMY_EXTRA_MATERIAL": "Cursed enemies drop {0} extra material",
 		"ENEMIES_SPAWNED": "Enemies spawned: {0}",
+		"CHARACTER_AEONIAN": "Aeonian",
+		"EFFECT_AEONIAN_ROUND_DURATION": "Rounds last {0}s longer for every {1} permanent Max HP (current: {2}s from {3} Max HP)",
 		"WEAPON_BATON": "Baton",
 		"EFFECT_BATON_STAT_SHIFT": "Every {0} enemies killed by this weapon in a wave: {1} from your highest stat, {2} to your lowest stat"
 	}
@@ -94,6 +96,10 @@ func _register_custom_effects() -> void:
 	var siren_safe_stat_gains_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/characters/siren/siren_safe_stat_gains_modification_effect.gd")
 	if siren_safe_stat_gains_effect != null and not _has_effect_with_id(siren_safe_stat_gains_effect.get_id()):
 		ItemService.effects.push_back(siren_safe_stat_gains_effect)
+
+	var aeonian_round_duration_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/characters/aeonian/aeonian_round_duration_effect.gd")
+	if aeonian_round_duration_effect != null and not _has_effect_with_id(aeonian_round_duration_effect.get_id()):
+		ItemService.effects.push_back(aeonian_round_duration_effect)
 
 
 func _has_effect_with_id(effect_id: String) -> bool:
