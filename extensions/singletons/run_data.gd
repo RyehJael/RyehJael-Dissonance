@@ -29,8 +29,6 @@ func apply_primary_stat_shift(player_index: int, highest_delta: int, lowest_delt
 	var highest_value = -INF
 
 	for stat_hash in RunData.primary_stats_list:
-		if stat_hash == Keys.stat_max_hp_hash:
-			continue
 		var stat_value = RunData.get_stat(stat_hash, player_index)
 		if stat_value > highest_value:
 			highest_value = stat_value
@@ -48,8 +46,6 @@ func apply_primary_stat_shift(player_index: int, highest_delta: int, lowest_delt
 	var lowest_value = INF
 
 	for stat_hash in RunData.primary_stats_list:
-		if stat_hash == Keys.stat_max_hp_hash:
-			continue
 		if stat_hash == reduced_stat_hash:
 			continue
 		var stat_value = RunData.get_stat(stat_hash, player_index)

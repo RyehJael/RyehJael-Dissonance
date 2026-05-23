@@ -15,17 +15,24 @@ func _init():
 	ext_dir = dir + "extensions/"
 	translations = {
 		"CHARACTER_CONDUCTOR": "Conductor",
-		"EFFECT_CONDUCTOR_LEVEL_SHIFT": "On level up: [color=#ff4d4d]-5[/color] to your highest non-Max HP primary stat, [color=#66cc66]+2[/color] to your lowest non-Max HP primary stat",
+		"EFFECT_CONDUCTOR_LEVEL_SHIFT": "On level up: {0} from your highest stat, {1} to your lowest stat",
+		"CHARACTER_SIREN": "Siren",
+		"EFFECT_SIREN_SPAWN_CURSED_ENEMY": "On enemy kill: {0}% ({1}% of {2}) chance to spawn a cursed enemy",
+		"EFFECT_SIREN_CURSED_ENEMY_EXTRA_MATERIAL": "Cursed enemies drop {0} extra material",
 		"WEAPON_BATON": "Baton",
-		"EFFECT_BATON_STAT_SHIFT": "Every {0} enemies killed by this weapon in a wave: [color=#ff4d4d]-1[/color] to your highest non-Max HP primary stat, [color=#66cc66]+1[/color] to your lowest non-Max HP primary stat"
+		"EFFECT_BATON_STAT_SHIFT": "Every {0} enemies killed by this weapon in a wave: {1} from your highest stat, {2} to your lowest stat"
 	}
 
+	ModLoaderMod.install_script_extension(ext_dir + "main.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/run_data.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/player_run_data.gd")
+	ModLoaderMod.install_script_extension(ext_dir + "global/screenshaker.gd")
+	ModLoaderMod.install_script_extension(ext_dir + "dlcs/dlc_1/dlc_1_data.gd")
 	_add_translations()
 
 
 func _ready()->void:
+	_register_custom_effects()
 	_load_dissonance_content()
 	var _dlc_activated = ProgressData.connect("dlc_activated", self, "_on_dlc_activated")
 	call_deferred("_load_dlc_content_if_available")
@@ -65,6 +72,23 @@ func _add_translations() -> void:
 	for key in translations.keys():
 		english_translation.add_message(key, translations[key])
 	TranslationServer.add_translation(english_translation)
+
+
+func _register_custom_effects() -> void:
+	var baton_shift_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/baton_stat_shift_effect.gd")
+	if baton_shift_effect != null and not _has_effect_with_id(baton_shift_effect.get_id()):
+		ItemService.effects.push_back(baton_shift_effect)
+
+	var siren_spawn_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/characters/siren/siren_spawn_cursed_enemy_effect.gd")
+	if siren_spawn_effect != null and not _has_effect_with_id(siren_spawn_effect.get_id()):
+		ItemService.effects.push_back(siren_spawn_effect)
+
+
+func _has_effect_with_id(effect_id: String) -> bool:
+	for effect in ItemService.effects:
+		if effect != null and effect.get_id() == effect_id:
+			return true
+	return false
 
 
 func _install_dlc_content_if_needed() -> void:
