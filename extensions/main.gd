@@ -15,6 +15,7 @@ var _siren_spawn_cursed_enemy_hash = Keys.generate_hash("effect_siren_spawn_curs
 var _siren_bonus_materials_hash = Keys.generate_hash("effect_siren_bonus_materials_from_cursed_enemies")
 var _siren_character_hash = Keys.generate_hash("character_siren")
 var _aeonian_round_duration_hash = Keys.generate_hash("effect_aeonian_round_duration_per_max_hp")
+var _round_duration_bonus_hash = Keys.generate_hash("effect_round_duration_bonus")
 var _siren_curse_enemy_effect_behavior_data: Resource = null
 var _pending_siren_spawn_sources := {}
 var _aeonian_round_duration_bonus = 0
@@ -22,7 +23,7 @@ var _aeonian_round_duration_bonus = 0
 
 func _ready() -> void:
 	_siren_curse_enemy_effect_behavior_data = load(CURSE_ENEMY_EFFECT_BEHAVIOR_PATH)
-	call_deferred("_apply_aeonian_round_duration_bonus")
+	call_deferred("_apply_round_duration_bonus")
 
 
 func _on_enemy_died(enemy: Enemy, args: Entity.DieArgs) -> void:
@@ -167,19 +168,22 @@ func _get_siren_spawn_cursed_enemy_chance(player_index: int) -> float:
 	return base_chance + range_bonus
 
 
-func _apply_aeonian_round_duration_bonus() -> void:
+func _apply_round_duration_bonus() -> void:
 	if _cleaning_up or _wave_timer == null:
 		return
 
 	_aeonian_round_duration_bonus = _get_aeonian_round_duration_bonus()
-	if _aeonian_round_duration_bonus <= 0:
+	var flat_duration_bonus = _get_flat_round_duration_bonus()
+	var total_duration_bonus = _aeonian_round_duration_bonus + flat_duration_bonus
+	if total_duration_bonus <= 0:
 		return
 
 	var current_time_left = _wave_timer.time_left
-	_wave_timer.wait_time += _aeonian_round_duration_bonus
+	_wave_timer.wait_time += total_duration_bonus
 	if not _wave_timer.is_stopped():
-		_wave_timer.start(max(0.1, current_time_left + _aeonian_round_duration_bonus))
-	_schedule_aeonian_extra_time_color(current_time_left)
+		_wave_timer.start(max(0.1, current_time_left + total_duration_bonus))
+	if _aeonian_round_duration_bonus > 0:
+		_schedule_aeonian_extra_time_color(current_time_left + flat_duration_bonus)
 
 
 func _schedule_aeonian_extra_time_color(base_time_left: float) -> void:
@@ -210,6 +214,13 @@ func _get_aeonian_round_duration_bonus() -> int:
 			continue
 		var max_hp = max(0.0, RunData.get_stat(Keys.stat_max_hp_hash, player_index))
 		duration_bonus += int(floor(max_hp / float(AEONIAN_MAX_HP_PER_EXTRA_SECOND))) * seconds_per_chunk
+	return duration_bonus
+
+
+func _get_flat_round_duration_bonus() -> int:
+	var duration_bonus = 0
+	for player_index in RunData.get_player_count():
+		duration_bonus += _get_siren_player_effect(_round_duration_bonus_hash, player_index)
 	return duration_bonus
 
 

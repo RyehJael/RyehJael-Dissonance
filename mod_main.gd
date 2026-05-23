@@ -21,7 +21,9 @@ func _init():
 		"EFFECT_SIREN_CURSED_ENEMY_EXTRA_MATERIAL": "Cursed enemies drop {0} extra material",
 		"ENEMIES_SPAWNED": "Enemies spawned: {0}",
 		"CHARACTER_AEONIAN": "Aeonian",
-		"EFFECT_AEONIAN_ROUND_DURATION": "Rounds last {0}s longer for every {1} permanent Max HP (current: {2}s from {3} Max HP)",
+		"EFFECT_AEONIAN_ROUND_DURATION": "Rounds last {0}s longer for every {1} permanent Max HP [{2}s]",
+		"ITEM_STARDUST": "Stardust",
+		"EFFECT_ROUND_DURATION_BONUS": "Rounds last +{0}s longer",
 		"WEAPON_BATON": "Baton",
 		"EFFECT_BATON_STAT_SHIFT": "Every {0} enemies killed by this weapon in a wave: {1} from your highest stat, {2} to your lowest stat"
 	}
@@ -40,6 +42,7 @@ func _init():
 func _ready()->void:
 	_register_custom_effects()
 	_load_dissonance_content()
+	call_deferred("_normalize_stardust_unlock_state")
 	var _dlc_activated = ProgressData.connect("dlc_activated", self, "_on_dlc_activated")
 	call_deferred("_load_dlc_content_if_available")
 	ModLoaderLog.info("Ready", DISSONANCE_LOG)
@@ -200,3 +203,27 @@ func _normalize_baton_unlock_state() -> void:
 
 	if (should_unlock_from_challenge or should_unlock_from_conductor_clear) and not ProgressData.weapons_unlocked.has(baton_weapon_hash):
 		ProgressData.weapons_unlocked.push_back(baton_weapon_hash)
+
+
+func _normalize_stardust_unlock_state() -> void:
+	var stardust_item_id = "item_stardust"
+	var stardust_item_hash = Keys.generate_hash(stardust_item_id)
+
+	if ProgressData.items_unlocked.has(stardust_item_id):
+		ProgressData.items_unlocked.erase(stardust_item_id)
+		if not ProgressData.items_unlocked.has(stardust_item_hash):
+			ProgressData.items_unlocked.push_back(stardust_item_hash)
+
+	var aeonian_challenge_hash = Keys.generate_hash("chal_aeonian")
+	var should_unlock_from_challenge = ChallengeService.is_challenge_completed(aeonian_challenge_hash)
+	var should_unlock_from_aeonian_clear = false
+	var aeonian_hash = Keys.generate_hash("character_aeonian")
+	for zone_id in [0, 1]:
+		var diff_info = ProgressData.get_character_difficulty_info(aeonian_hash, zone_id)
+		if diff_info != null and diff_info.max_difficulty_beaten.difficulty_value >= 0:
+			should_unlock_from_aeonian_clear = true
+			break
+
+	if (should_unlock_from_challenge or should_unlock_from_aeonian_clear) and not ProgressData.items_unlocked.has(stardust_item_hash):
+		ProgressData.items_unlocked.push_back(stardust_item_hash)
+		ItemService.init_unlocked_pool()

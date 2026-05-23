@@ -29,13 +29,12 @@ func get_args(player_index: int) -> Array:
 	return [
 		_format_seconds(value),
 		str(nb_stat_scaled),
-		_format_seconds(_get_current_bonus(player_index)),
-		str(_get_current_max_hp(player_index))
+		_format_seconds(_get_current_bonus(player_index))
 	]
 
 
 func get_text(player_index: int, colored: bool = true) -> String:
-	var signs = [] if not colored else [Sign.POSITIVE, Sign.NEUTRAL, Sign.POSITIVE, Sign.NEUTRAL]
+	var signs = [] if not colored else [Sign.POSITIVE, Sign.NEUTRAL, Sign.POSITIVE]
 	return Text.text(text_key.to_upper(), get_args(player_index), signs)
 
 
