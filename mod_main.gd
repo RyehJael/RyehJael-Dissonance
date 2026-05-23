@@ -17,8 +17,9 @@ func _init():
 		"CHARACTER_CONDUCTOR": "Conductor",
 		"EFFECT_CONDUCTOR_LEVEL_SHIFT": "On level up: {0} from your highest stat, {1} to your lowest stat",
 		"CHARACTER_SIREN": "Siren",
-		"EFFECT_SIREN_SPAWN_CURSED_ENEMY": "On enemy kill: {0}% chance to spawn a cursed enemy",
+		"EFFECT_SIREN_SPAWN_CURSED_ENEMY": "On enemy kill: {0}% chance to spawn a cursed enemy ({1})",
 		"EFFECT_SIREN_CURSED_ENEMY_EXTRA_MATERIAL": "Cursed enemies drop {0} extra material",
+		"ENEMIES_SPAWNED": "Enemies spawned: {0}",
 		"WEAPON_BATON": "Baton",
 		"EFFECT_BATON_STAT_SHIFT": "Every {0} enemies killed by this weapon in a wave: {1} from your highest stat, {2} to your lowest stat"
 	}

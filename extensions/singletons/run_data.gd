@@ -2,6 +2,14 @@ extends "res://singletons/run_data.gd"
 
 const DISSONANCE_LOG = "RyehJael-Dissonance"
 var conductor_level_shift_hash = Keys.generate_hash("effect_conductor_level_shift")
+var siren_character_hash = Keys.generate_hash("character_siren")
+
+
+func init_tracked_effects() -> Dictionary:
+	var tracked_effects = .init_tracked_effects()
+	if not tracked_effects.has(siren_character_hash):
+		tracked_effects[siren_character_hash] = 0
+	return tracked_effects
 
 
 func get_player_effects(player_index: int) -> Dictionary:
