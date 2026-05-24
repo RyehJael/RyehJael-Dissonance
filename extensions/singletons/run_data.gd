@@ -92,8 +92,23 @@ func _conductor_has_level_shift_effect(player_index: int) -> bool:
 
 
 func _apply_conductor_level_shift(player_index: int) -> void:
-	if apply_primary_stat_shift(player_index, 5, 2):
+	var level_shift_effect = _get_conductor_level_shift_effect(player_index)
+	var highest_delta = 5 if level_shift_effect == null else int(level_shift_effect.highest_delta)
+	var lowest_delta = 3 if level_shift_effect == null else int(level_shift_effect.lowest_delta)
+	if apply_primary_stat_shift(player_index, highest_delta, lowest_delta):
 		ModLoaderLog.info("Conductor level-up shift applied", DISSONANCE_LOG)
+
+
+func _get_conductor_level_shift_effect(player_index: int):
+	var character = get_player_character(player_index)
+	if character == null:
+		return null
+
+	for effect in character.effects:
+		if effect != null and effect.key == "effect_conductor_level_shift":
+			return effect
+
+	return null
 
 
 func apply_primary_stat_shift(player_index: int, highest_delta: int, lowest_delta: int) -> bool:
