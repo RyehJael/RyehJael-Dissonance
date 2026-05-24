@@ -6,6 +6,7 @@ var _poet_curse_shop_reroll_hash = Keys.generate_hash("effect_poet_curse_shop_re
 func _on_RerollButton_pressed(player_index: int) -> void:
 	var has_poet_reroll = _has_poet_curse_shop_reroll(player_index)
 	var reroll_count_before = _reroll_count[player_index]
+	var free_rerolls_before = _free_rerolls[player_index]
 
 	if has_poet_reroll:
 		_reroll_price[player_index] = 0
@@ -13,6 +14,8 @@ func _on_RerollButton_pressed(player_index: int) -> void:
 	._on_RerollButton_pressed(player_index)
 
 	if not has_poet_reroll or _reroll_count[player_index] <= reroll_count_before:
+		return
+	if _free_rerolls[player_index] < free_rerolls_before:
 		return
 
 	var curse_gain = RunData.get_player_effect(_poet_curse_shop_reroll_hash, player_index)
@@ -30,6 +33,8 @@ func set_reroll_button_price(player_index: int) -> void:
 	.set_reroll_button_price(player_index)
 
 	if not _has_poet_curse_shop_reroll(player_index):
+		return
+	if _free_rerolls[player_index] > 0:
 		return
 
 	_reroll_price[player_index] = 0

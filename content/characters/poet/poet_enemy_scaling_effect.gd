@@ -30,13 +30,14 @@ func unapply(player_index: int) -> void:
 func get_args(player_index: int) -> Array:
 	return [
 		"+" + str(value) if value >= 0 else str(value),
+		str(nb_stat_scaled),
 		tr("STAT_CURSE"),
 		"+" + str(_get_current_enemy_scaling(player_index))
 	]
 
 
 func get_text(player_index: int, colored: bool = true) -> String:
-	var signs = [] if not colored else [Sign.NEGATIVE, Sign.NEUTRAL, Sign.NEGATIVE]
+	var signs = [] if not colored else [Sign.NEGATIVE, Sign.NEUTRAL, Sign.NEUTRAL, Sign.NEGATIVE]
 	return Text.text(text_key.to_upper(), get_args(player_index), signs)
 
 
@@ -67,7 +68,8 @@ func _get_enemy_scaling_link(stat_hash: int) -> Array:
 func _get_current_enemy_scaling(player_index: int) -> int:
 	if not _can_use_player_effects(player_index):
 		return 0
-	return int(value * (max(0.0, RunData.get_stat(Keys.stat_curse_hash, player_index)) / nb_stat_scaled))
+	var curse = max(0.0, RunData.get_stat(Keys.stat_curse_hash, player_index))
+	return int(floor(curse / nb_stat_scaled)) * value
 
 
 func _ensure_effect_key(player_index: int) -> void:

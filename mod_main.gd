@@ -24,7 +24,7 @@ func _init():
 		"EFFECT_AEONIAN_ROUND_DURATION": "Rounds last {0}s longer for every {1} permanent Max HP [{2}s]",
 		"CHARACTER_POET": "Poet",
 		"EFFECT_POET_CURSE_SHOP_REROLL": "Shop refreshes cost {0} Curse instead of materials",
-		"EFFECT_POET_ENEMY_SCALING": "Enemies have {0}% Max HP and {0}% damage for each {1} [{2}%]",
+		"EFFECT_POET_ENEMY_SCALING": "Enemies have {0}% Max HP and {0}% damage for every {1} {2} [{3}%]",
 		"ITEM_STARDUST": "Stardust",
 		"EFFECT_ROUND_DURATION_BONUS": "Rounds last +{0}s longer",
 		"WEAPON_BATON": "Baton",
