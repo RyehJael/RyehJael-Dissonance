@@ -22,6 +22,9 @@ func _init():
 		"ENEMIES_SPAWNED": "Enemies spawned: {0}",
 		"CHARACTER_AEONIAN": "Aeonian",
 		"EFFECT_AEONIAN_ROUND_DURATION": "Rounds last {0}s longer for every {1} permanent Max HP [{2}s]",
+		"CHARACTER_POET": "Poet",
+		"EFFECT_POET_CURSE_SHOP_REROLL": "Shop refreshes cost {0} Curse instead of materials",
+		"EFFECT_POET_ENEMY_SCALING": "Enemies have {0}% Max HP and {0}% damage for each {1} [{2}%]",
 		"ITEM_STARDUST": "Stardust",
 		"EFFECT_ROUND_DURATION_BONUS": "Rounds last +{0}s longer",
 		"WEAPON_BATON": "Baton",
@@ -31,6 +34,7 @@ func _init():
 	ModLoaderMod.install_script_extension(ext_dir + "main.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "global/item_parent_data.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "global/weapon_data.gd")
+	ModLoaderMod.install_script_extension(ext_dir + "ui/menus/shop/base_shop.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "ui/menus/shop/item_description.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/run_data.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/player_run_data.gd")
@@ -103,6 +107,14 @@ func _register_custom_effects() -> void:
 	var aeonian_round_duration_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/characters/aeonian/aeonian_round_duration_effect.gd")
 	if aeonian_round_duration_effect != null and not _has_effect_with_id(aeonian_round_duration_effect.get_id()):
 		ItemService.effects.push_back(aeonian_round_duration_effect)
+
+	var poet_curse_reroll_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/characters/poet/poet_curse_shop_reroll_effect.gd")
+	if poet_curse_reroll_effect != null and not _has_effect_with_id(poet_curse_reroll_effect.get_id()):
+		ItemService.effects.push_back(poet_curse_reroll_effect)
+
+	var poet_enemy_scaling_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/characters/poet/poet_enemy_scaling_effect.gd")
+	if poet_enemy_scaling_effect != null and not _has_effect_with_id(poet_enemy_scaling_effect.get_id()):
+		ItemService.effects.push_back(poet_enemy_scaling_effect)
 
 
 func _has_effect_with_id(effect_id: String) -> bool:
