@@ -2,9 +2,9 @@ extends "res://main.gd"
 
 const CURSE_ENEMY_EFFECT_BEHAVIOR_PATH = "res://dlcs/dlc_1/effect_behaviors/enemy/curse_enemy_effect_behavior_data.tres"
 const CURSE_ENEMY_EFFECT_SCRIPT_PATH = "res://dlcs/dlc_1/effect_behaviors/enemy/curse_enemy_effect_behavior.gd"
-const SIREN_CURSE_HP_BOOST = 200
-const SIREN_CURSE_DAMAGE_BOOST = 50
-const SIREN_CURSE_SPEED_BOOST = 75
+const SIREN_CURSE_HP_BOOST = 150
+const SIREN_CURSE_DAMAGE_BOOST = 25
+const SIREN_CURSE_SPEED_BOOST = 15
 const SIREN_MAX_CURSE_HP_BOOST = 300
 const SIREN_RANGE_CHANCE_SCALING = 0.04
 const SIREN_MIN_SPAWN_DIST_FROM_PLAYER = 300
@@ -104,7 +104,7 @@ func _try_curse_pending_siren_spawn(enemy: Enemy) -> void:
 			_add_siren_spawn_tracked_value(player_index)
 
 
-func _curse_siren_spawned_enemy(enemy: Enemy, _player_index: int) -> bool:
+func _curse_siren_spawned_enemy(enemy: Enemy, player_index: int) -> bool:
 	if _siren_curse_enemy_effect_behavior_data == null or _siren_curse_enemy_effect_behavior_data.scene == null:
 		return false
 	if _is_cursed_enemy(enemy):
@@ -116,14 +116,24 @@ func _curse_siren_spawned_enemy(enemy: Enemy, _player_index: int) -> bool:
 	var enemy_being_cursed_effect_behavior = _siren_curse_enemy_effect_behavior_data.scene.instance()
 	enemy.effect_behaviors.add_child(enemy_being_cursed_effect_behavior.init(enemy))
 
+	var curse_value = _get_siren_spawned_enemy_curse_value(player_index)
 	var boost_args := BoostArgs.new()
-	boost_args.hp_boost = SIREN_CURSE_HP_BOOST + min(_get_total_curse(), SIREN_MAX_CURSE_HP_BOOST) * 2
+	boost_args.hp_boost = SIREN_CURSE_HP_BOOST + min(curse_value, SIREN_MAX_CURSE_HP_BOOST) * 2
 	boost_args.damage_boost = SIREN_CURSE_DAMAGE_BOOST
 	boost_args.speed_boost = SIREN_CURSE_SPEED_BOOST
 	boost_args.show_outline = false
 	enemy.boost(boost_args)
 	enemy.can_be_boosted = false
 	return true
+
+
+func _get_siren_spawned_enemy_curse_value(player_index: int) -> int:
+	if not _is_valid_siren_player_index(player_index):
+		return 1
+	var player_curse := int(Utils.get_stat(Keys.stat_curse_hash, player_index))
+	if player_curse <= 0:
+		return 1
+	return player_curse
 
 
 func _add_siren_spawn_tracked_value(player_index: int) -> void:
@@ -234,11 +244,3 @@ func _is_cursed_enemy(unit: Unit) -> bool:
 			return true
 
 	return false
-
-
-func _get_total_curse() -> int:
-	var curse = 0
-	for player_index in RunData.get_player_count():
-		if RunData.get_player_effects(player_index).has(Keys.stat_curse_hash):
-			curse += Utils.get_stat(Keys.stat_curse_hash, player_index)
-	return curse

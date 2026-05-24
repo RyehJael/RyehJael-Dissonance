@@ -111,7 +111,7 @@ func _get_conductor_level_shift_effect(player_index: int):
 	return null
 
 
-func apply_primary_stat_shift(player_index: int, highest_delta: int, lowest_delta: int) -> bool:
+func apply_primary_stat_shift(player_index: int, highest_delta: int, lowest_delta: int, skip_disabled_stat_gain_targets: bool = false) -> bool:
 	var highest_stats = []
 	var highest_value = -INF
 
@@ -127,13 +127,14 @@ func apply_primary_stat_shift(player_index: int, highest_delta: int, lowest_delt
 		return false
 
 	var reduced_stat_hash = Utils.get_rand_element(highest_stats)
-	RunData.remove_stat(reduced_stat_hash, highest_delta, player_index)
 
 	var lowest_stats = []
 	var lowest_value = INF
 
 	for stat_hash in RunData.primary_stats_list:
 		if stat_hash == reduced_stat_hash:
+			continue
+		if skip_disabled_stat_gain_targets and is_stat_gain_disabled(player_index, stat_hash):
 			continue
 		var stat_value = RunData.get_stat(stat_hash, player_index)
 		if stat_value < lowest_value:
@@ -146,6 +147,11 @@ func apply_primary_stat_shift(player_index: int, highest_delta: int, lowest_delt
 		return false
 
 	var increased_stat_hash = Utils.get_rand_element(lowest_stats)
+	RunData.remove_stat(reduced_stat_hash, highest_delta, player_index)
 	RunData.add_stat(increased_stat_hash, lowest_delta, player_index)
 
 	return true
+
+
+func is_stat_gain_disabled(player_index: int, stat_hash: int) -> bool:
+	return RunData.get_stat_gain(stat_hash, player_index) <= 0.0

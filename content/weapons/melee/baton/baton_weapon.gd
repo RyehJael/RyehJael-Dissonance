@@ -31,10 +31,12 @@ func on_killed_something(_thing_killed: Node, hitbox: Hitbox) -> void:
 		if effect is GainStatEveryKilledEnemiesEffect and effect.value > 0:
 			if effect.key_hash == baton_shift_effect_hash:
 				if _baton_kills_this_wave % effect.value == 0:
-					RunData.apply_primary_stat_shift(player_index, effect.highest_delta, effect.lowest_delta)
-					emit_signal("tracked_value_updated", effect.lowest_delta)
+					if RunData.apply_primary_stat_shift(player_index, effect.highest_delta, effect.lowest_delta, true):
+						emit_signal("tracked_value_updated", effect.lowest_delta)
 			elif _enemies_killed_this_wave_count % effect.value == 0:
 				assert (effect.stat_hash is int and effect.stat_hash != Keys.empty_hash)
+				if RunData.is_stat_gain_disabled(player_index, effect.stat_hash):
+					continue
 				RunData.add_stat(effect.stat_hash, effect.stat_nb, player_index)
 				emit_signal("tracked_value_updated", effect.stat_nb)
 
