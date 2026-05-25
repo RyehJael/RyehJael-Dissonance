@@ -30,4 +30,4 @@ sets = [ ExtResource( 7 ), ExtResource( 8 ) ]
 scene = ExtResource( 5 )
 stats = ExtResource( 3 )
 upgrades_into = ExtResource( 4 )
-add_to_chars_as_starting = [  ]
+add_to_chars_as_starting = [ "character_siren", "character_romantic", "character_creature", "character_sailor", "character_aeonian", "character_loud" ]

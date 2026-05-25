@@ -14,26 +14,41 @@ const AEONIAN_EXTRA_TIME_COLOR = Color.deepskyblue
 var _siren_spawn_cursed_enemy_hash = Keys.generate_hash("effect_siren_spawn_cursed_enemy")
 var _siren_bonus_materials_hash = Keys.generate_hash("effect_siren_bonus_materials_from_cursed_enemies")
 var _siren_character_hash = Keys.generate_hash("character_siren")
+var _influencer_ban_harvesting_hash = Keys.generate_hash("effect_influencer_harvesting_on_ban")
+var _influencer_character_hash = Keys.generate_hash("character_influencer")
 var _aeonian_round_duration_hash = Keys.generate_hash("effect_aeonian_round_duration_per_max_hp")
 var _round_duration_bonus_hash = Keys.generate_hash("effect_round_duration_bonus")
+var _chal_unlock_aeonian_hash = Keys.generate_hash("chal_unlock_aeonian")
+var _chal_unlock_influencer_hash = Keys.generate_hash("chal_unlock_influencer")
+var _chal_unlock_siren_hash = Keys.generate_hash("chal_unlock_siren")
 var _siren_curse_enemy_effect_behavior_data: Resource = null
 var _pending_siren_spawn_sources := {}
 var _aeonian_round_duration_bonus = 0
+var _dissonance_cursed_enemy_kills_this_wave := [0, 0, 0, 0]
 
 
 func _ready() -> void:
+	_dissonance_cursed_enemy_kills_this_wave = [0, 0, 0, 0]
 	_siren_curse_enemy_effect_behavior_data = load(CURSE_ENEMY_EFFECT_BEHAVIOR_PATH)
+	_try_complete_aeonian_unlock_challenge()
 	call_deferred("_apply_round_duration_bonus")
 
 
 func _on_enemy_died(enemy: Enemy, args: Entity.DieArgs) -> void:
 	._on_enemy_died(enemy, args)
+	_try_count_dissonance_cursed_enemy_kill(enemy, args)
 	_try_spawn_siren_cursed_enemy(enemy, args)
 
 
 func spawn_loot(unit: Unit, entity_type: int, args: Entity.DieArgs) -> void:
 	.spawn_loot(unit, entity_type, args)
 	_try_spawn_siren_cursed_enemy_bonus_material(unit, entity_type, args)
+
+
+func on_item_box_ban_button_pressed(item_data: ItemParentData, consumable: UpgradesUI.ConsumableToProcess) -> void:
+	.on_item_box_ban_button_pressed(item_data, consumable)
+	_try_add_influencer_ban_harvesting(consumable.player_index)
+	_try_complete_influencer_unlock_challenge(consumable.player_index)
 
 
 func _on_EntitySpawner_enemy_respawned(enemy: Enemy) -> void:
@@ -168,6 +183,62 @@ func _try_spawn_siren_cursed_enemy_bonus_material(unit: Unit, entity_type: int, 
 		return
 
 	spawn_gold(bonus_materials, unit.global_position, unit.stats.gold_spread)
+
+
+func _try_count_dissonance_cursed_enemy_kill(enemy: Enemy, args: Entity.DieArgs) -> void:
+	if _cleaning_up or not args.enemy_killed_by_player:
+		return
+	if enemy == null or not is_instance_valid(enemy) or not _is_cursed_enemy(enemy):
+		return
+	if ChallengeService.get_chal(_chal_unlock_siren_hash) == null:
+		return
+
+	var player_index = args.killed_by_player_index
+	if player_index < 0 or player_index >= RunData.get_player_count():
+		return
+
+	_ensure_dissonance_cursed_enemy_kill_slot(player_index)
+	_dissonance_cursed_enemy_kills_this_wave[player_index] += 1
+	ChallengeService.try_complete_challenge(_chal_unlock_siren_hash, _dissonance_cursed_enemy_kills_this_wave[player_index])
+
+
+func _ensure_dissonance_cursed_enemy_kill_slot(player_index: int) -> void:
+	if player_index < _dissonance_cursed_enemy_kills_this_wave.size():
+		return
+	var old_size = _dissonance_cursed_enemy_kills_this_wave.size()
+	_dissonance_cursed_enemy_kills_this_wave.resize(player_index + 1)
+	for index in range(old_size, _dissonance_cursed_enemy_kills_this_wave.size()):
+		_dissonance_cursed_enemy_kills_this_wave[index] = 0
+
+
+func _try_add_influencer_ban_harvesting(player_index: int) -> void:
+	if player_index < 0 or player_index >= RunData.get_player_count():
+		return
+
+	var harvesting_gain = _get_siren_player_effect(_influencer_ban_harvesting_hash, player_index)
+	if harvesting_gain <= 0:
+		return
+
+	RunData.add_stat(Keys.stat_harvesting_hash, harvesting_gain, player_index)
+	RunData.add_tracked_value(player_index, _influencer_character_hash, harvesting_gain)
+	LinkedStats.reset_player(player_index)
+	EntityService.reset_cache()
+
+
+func _try_complete_aeonian_unlock_challenge() -> void:
+	var challenge = ChallengeService.get_chal(_chal_unlock_aeonian_hash)
+	if challenge == null:
+		return
+	if RunData.current_wave >= challenge.value:
+		ChallengeService.complete_challenge(_chal_unlock_aeonian_hash)
+
+
+func _try_complete_influencer_unlock_challenge(player_index: int) -> void:
+	if player_index < 0 or player_index >= RunData.get_player_count():
+		return
+	if ChallengeService.get_chal(_chal_unlock_influencer_hash) == null:
+		return
+	ChallengeService.try_complete_challenge(_chal_unlock_influencer_hash, RunData.players_data[player_index].banned_items.size())
 
 
 func _is_valid_siren_player_index(player_index: int) -> bool:

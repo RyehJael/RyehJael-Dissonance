@@ -1,4 +1,4 @@
-[gd_resource type="Resource" load_steps=8 format=2]
+[gd_resource type="Resource" load_steps=14 format=2]
 
 [ext_resource path="res://mods-unpacked/Darkly77-ContentLoader/content_data.gd" type="Script" id=1]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/characters/conductor/conductor_data.tres" type="Resource" id=2]
@@ -7,13 +7,19 @@
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/stardust/stardust_data.tres" type="Resource" id=5]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_aeonian.tres" type="Resource" id=6]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/characters/poet/poet_data.tres" type="Resource" id=7]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/characters/influencer/influencer_data.tres" type="Resource" id=8]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_unlock_aeonian.tres" type="Resource" id=9]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_unlock_conductor.tres" type="Resource" id=10]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_unlock_influencer.tres" type="Resource" id=11]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_unlock_poet.tres" type="Resource" id=12]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_unlock_siren.tres" type="Resource" id=13]
 
 [resource]
 script = ExtResource( 1 )
 items = [ ExtResource( 5 ) ]
 weapons = [  ]
-characters = [ ExtResource( 2 ), ExtResource( 3 ), ExtResource( 4 ), ExtResource( 7 ) ]
+characters = [ ExtResource( 2 ), ExtResource( 3 ), ExtResource( 4 ), ExtResource( 7 ), ExtResource( 8 ) ]
 weapons_characters = [  ]
 debug_items = [  ]
 sets = [  ]
-challenges = [ ExtResource( 6 ) ]
+challenges = [ ExtResource( 6 ), ExtResource( 9 ), ExtResource( 10 ), ExtResource( 11 ), ExtResource( 12 ), ExtResource( 13 ) ]

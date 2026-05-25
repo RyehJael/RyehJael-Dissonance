@@ -3,12 +3,17 @@ extends "res://singletons/run_data.gd"
 const DISSONANCE_LOG = "RyehJael-Dissonance"
 var conductor_level_shift_hash = Keys.generate_hash("effect_conductor_level_shift")
 var siren_character_hash = Keys.generate_hash("character_siren")
+var influencer_character_hash = Keys.generate_hash("character_influencer")
+var chal_unlock_conductor_hash = Keys.generate_hash("chal_unlock_conductor")
+var chal_unlock_poet_hash = Keys.generate_hash("chal_unlock_poet")
 
 
 func init_tracked_effects() -> Dictionary:
 	var tracked_effects = .init_tracked_effects()
 	if not tracked_effects.has(siren_character_hash):
 		tracked_effects[siren_character_hash] = 0
+	if not tracked_effects.has(influencer_character_hash):
+		tracked_effects[influencer_character_hash] = 0
 	return tracked_effects
 
 
@@ -35,28 +40,40 @@ func get_player_effect(key: int, player_index: int):
 	return effects[key]
 
 
+func add_stat(stat_hsh: int, value: int, player_index: int) -> void:
+	if not _is_dissonance_valid_player_index(player_index):
+		return
+	.add_stat(stat_hsh, value, player_index)
+	_try_complete_dissonance_stat_challenges(player_index)
+
+
 func add_character(character: CharacterData, player_index: int) -> void:
 	if not _is_dissonance_valid_player_index(player_index):
 		return
 	.add_character(character, player_index)
+	_try_complete_dissonance_stat_challenges(player_index)
 
 
 func add_item(item: ItemData, player_index: int, is_selection: bool = false) -> void:
 	if not _is_dissonance_valid_player_index(player_index):
 		return
 	.add_item(item, player_index, is_selection)
+	_try_complete_dissonance_stat_challenges(player_index)
 
 
 func add_weapon(weapon: WeaponData, player_index: int, is_starting_weapon: bool = false):
 	if not _is_dissonance_valid_player_index(player_index):
 		return null
-	return .add_weapon(weapon, player_index, is_starting_weapon)
+	var added_weapon = .add_weapon(weapon, player_index, is_starting_weapon)
+	_try_complete_dissonance_stat_challenges(player_index)
+	return added_weapon
 
 
 func apply_item_effects(item_data: ItemParentData, player_index: int) -> void:
 	if not _is_dissonance_valid_player_index(player_index):
 		return
 	.apply_item_effects(item_data, player_index)
+	_try_complete_dissonance_stat_challenges(player_index)
 
 
 func unapply_item_effects(item_data: ItemParentData, player_index: int) -> void:
@@ -73,6 +90,38 @@ func _get_dissonance_dummy_player_effects() -> Dictionary:
 
 func _is_dissonance_valid_player_index(player_index: int) -> bool:
 	return player_index >= 0 and player_index < players_data.size()
+
+
+func _try_complete_dissonance_stat_challenges(player_index: int) -> void:
+	_try_complete_conductor_unlock_challenge(player_index)
+	_try_complete_poet_unlock_challenge(player_index)
+
+
+func _try_complete_conductor_unlock_challenge(player_index: int) -> void:
+	if ChallengeService.is_challenge_completed(chal_unlock_conductor_hash):
+		return
+
+	var challenge = ChallengeService.get_chal(chal_unlock_conductor_hash)
+	if challenge == null:
+		return
+	var required_value = challenge.value
+	for stat_hash in RunData.primary_stats_list:
+		if RunData.get_stat(stat_hash, player_index) < required_value:
+			return
+
+	ChallengeService.complete_challenge(chal_unlock_conductor_hash)
+
+
+func _try_complete_poet_unlock_challenge(player_index: int) -> void:
+	if ChallengeService.is_challenge_completed(chal_unlock_poet_hash):
+		return
+
+	var challenge = ChallengeService.get_chal(chal_unlock_poet_hash)
+	if challenge == null:
+		return
+	var required_value = challenge.value
+	if RunData.get_stat(Keys.stat_curse_hash, player_index) >= required_value:
+		ChallengeService.complete_challenge(chal_unlock_poet_hash)
 
 
 func level_up(player_index: int) -> void:

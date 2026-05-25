@@ -1,0 +1,23 @@
+[remap]
+
+importer="wav"
+type="AudioStreamSample"
+path="res://.import/conch_4_sound_2.wav-f6b8ff9d94b68d33a794289e2c8dc2db.sample"
+
+[deps]
+
+source_file="res://mods-unpacked/RyehJael-Dissonance/content/weapons/ranged/conch/sounds/conch_4_sound_2.wav"
+dest_files=[ "res://.import/conch_4_sound_2.wav-f6b8ff9d94b68d33a794289e2c8dc2db.sample" ]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=0

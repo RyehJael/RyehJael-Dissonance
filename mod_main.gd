@@ -25,6 +25,19 @@ func _init():
 		"CHARACTER_POET": "Poet",
 		"EFFECT_POET_CURSE_SHOP_REROLL": "Shop refreshes cost {0} Curse instead of materials",
 		"EFFECT_POET_ENEMY_SCALING": "Enemies have {0}% Max HP and {0}% damage for every {1} {2} [{3}%]",
+		"CHARACTER_INFLUENCER": "Influencer",
+		"EFFECT_INFLUENCER_BAN_HARVESTING": "On item ban: gain {0} {1}",
+		"EFFECT_INFLUENCER_BONUS_BAN": "Every {0} items/weapons bought: gain {1} bonus Ban",
+		"CHAL_UNLOCK_AEONIAN": "Aeonian",
+		"CHAL_UNLOCK_CONDUCTOR": "Conductor",
+		"CHAL_UNLOCK_INFLUENCER": "Influencer",
+		"CHAL_UNLOCK_POET": "Poet",
+		"CHAL_UNLOCK_SIREN": "Siren",
+		"CHAL_DISSONANCE_REACH_WAVE": "Reach wave {0}",
+		"CHAL_DISSONANCE_PRIMARY_STATS": "Have at least {0} of every primary stat",
+		"CHAL_DISSONANCE_BAN_ITEMS": "Ban {0} items in a single run",
+		"CHAL_DISSONANCE_REACH_STAT": "Reach {0} {1}",
+		"CHAL_DISSONANCE_CURSED_KILLS_WAVE": "Kill {0} cursed enemies in a single wave",
 		"ITEM_STARDUST": "Stardust",
 		"EFFECT_ROUND_DURATION_BONUS": "Rounds last +{0}s longer",
 		"WEAPON_CONCH": "Conch",
@@ -48,6 +61,9 @@ func _init():
 func _ready()->void:
 	_register_custom_effects()
 	_load_dissonance_content()
+	call_deferred("_register_dissonance_challenges")
+	call_deferred("_normalize_dissonance_character_unlock_states")
+	call_deferred("_add_conch_starting_weapons")
 	call_deferred("_normalize_stardust_unlock_state")
 	call_deferred("_normalize_conch_unlock_state")
 	var _dlc_activated = ProgressData.connect("dlc_activated", self, "_on_dlc_activated")
@@ -74,6 +90,7 @@ func _load_dlc_content_if_available() -> void:
 	_normalize_baton_unlock_state()
 	ItemService.init_unlocked_pool()
 	_add_dlc_starting_weapons()
+	_add_conch_starting_weapons()
 
 
 func _on_dlc_activated(dlc_id: String) -> void:
@@ -130,9 +147,64 @@ func _register_custom_effects() -> void:
 	if poet_enemy_scaling_effect != null and not _has_effect_with_id(poet_enemy_scaling_effect.get_id()):
 		ItemService.effects.push_back(poet_enemy_scaling_effect)
 
+	var influencer_ban_harvesting_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/characters/influencer/influencer_ban_harvesting_effect.gd")
+	if influencer_ban_harvesting_effect != null and not _has_effect_with_id(influencer_ban_harvesting_effect.get_id()):
+		ItemService.effects.push_back(influencer_ban_harvesting_effect)
+
+	var influencer_bonus_ban_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/characters/influencer/influencer_bonus_ban_effect.gd")
+	if influencer_bonus_ban_effect != null and not _has_effect_with_id(influencer_bonus_ban_effect.get_id()):
+		ItemService.effects.push_back(influencer_bonus_ban_effect)
+
 	var conch_spawn_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/weapons/ranged/conch/conch_spawn_cursed_enemy_effect.gd")
 	if conch_spawn_effect != null and not _has_effect_with_id(conch_spawn_effect.get_id()):
 		ItemService.effects.push_back(conch_spawn_effect)
+
+
+func _register_dissonance_challenges() -> void:
+	for challenge_path in [
+		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_aeonian.tres",
+		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_conductor.tres",
+		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_siren.tres",
+		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_unlock_aeonian.tres",
+		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_unlock_conductor.tres",
+		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_unlock_influencer.tres",
+		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_unlock_poet.tres",
+		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_unlock_siren.tres"
+	]:
+		var challenge = load(challenge_path)
+		if challenge == null:
+			continue
+		challenge._generate_hashes()
+		ChallengeService.hash_to_id[challenge.my_id_hash] = challenge.my_id
+		if not _has_resource_with_id(ChallengeService.challenges, "my_id", challenge.my_id):
+			ChallengeService.challenges.push_back(challenge)
+	ChallengeService._challenge_map.clear()
+
+
+func _normalize_dissonance_character_unlock_states() -> void:
+	for character_id in [
+		"character_aeonian",
+		"character_conductor",
+		"character_influencer",
+		"character_poet",
+		"character_siren"
+	]:
+		var challenge_id = "chal_unlock_" + character_id.replace("character_", "")
+		_normalize_dissonance_character_unlock(character_id, challenge_id)
+
+
+func _normalize_dissonance_character_unlock(character_id: String, challenge_id: String) -> void:
+	var character_hash = Keys.generate_hash(character_id)
+	var challenge_hash = Keys.generate_hash(challenge_id)
+	var is_unlocked = ProgressData.is_unlock_all_save() or ChallengeService.is_challenge_completed(challenge_hash)
+
+	if ProgressData.characters_unlocked.has(character_id):
+		ProgressData.characters_unlocked.erase(character_id)
+	if ProgressData.characters_unlocked.has(character_hash):
+		ProgressData.characters_unlocked.erase(character_hash)
+
+	if is_unlocked:
+		ProgressData.characters_unlocked.push_back(character_hash)
 
 
 func _has_effect_with_id(effect_id: String) -> bool:
@@ -207,6 +279,41 @@ func _add_dlc_starting_weapons() -> void:
 			return
 
 	conductor_data.starting_weapons.push_back(baton_weapon)
+
+
+func _add_conch_starting_weapons() -> void:
+	var conch_weapon = load("res://mods-unpacked/RyehJael-Dissonance/content/weapons/ranged/conch/1/conch_data.tres")
+	if conch_weapon == null:
+		return
+
+	for character_id in [
+		"character_siren",
+		"character_romantic",
+		"character_creature",
+		"character_sailor",
+		"character_aeonian",
+		"character_loud"
+	]:
+		_add_starting_weapon_to_character(character_id, conch_weapon)
+
+
+func _add_starting_weapon_to_character(character_id: String, weapon: WeaponData) -> void:
+	var character = _get_character_by_id(character_id)
+	if character == null:
+		return
+
+	for starting_weapon in character.starting_weapons:
+		if starting_weapon != null and starting_weapon.my_id == weapon.my_id:
+			return
+
+	character.starting_weapons.push_back(weapon)
+
+
+func _get_character_by_id(character_id: String) -> CharacterData:
+	for character in ItemService.characters:
+		if character != null and character.my_id == character_id:
+			return character
+	return null
 
 
 func _normalize_baton_unlock_state() -> void:

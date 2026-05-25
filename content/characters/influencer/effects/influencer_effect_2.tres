@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=2]
+
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/characters/influencer/influencer_bonus_ban_effect.gd" type="Script" id=1]
+
+[resource]
+script = ExtResource( 1 )
+key = "effect_influencer_bonus_ban_on_purchase"
+text_key = "effect_influencer_bonus_ban"
+value = 1
+custom_key = ""
+storage_method = 0
+effect_sign = 3
+custom_args = [  ]
+purchases_required = 10
