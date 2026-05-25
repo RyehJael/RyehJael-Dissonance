@@ -27,6 +27,8 @@ func _init():
 		"EFFECT_POET_ENEMY_SCALING": "Enemies have {0}% Max HP and {0}% damage for every {1} {2} [{3}%]",
 		"ITEM_STARDUST": "Stardust",
 		"EFFECT_ROUND_DURATION_BONUS": "Rounds last +{0}s longer",
+		"WEAPON_CONCH": "Conch",
+		"EFFECT_CONCH_SPAWN_CURSED_ENEMY": "{0}% chance to spawn a cursed enemy when killing an enemy with this weapon",
 		"WEAPON_BATON": "Baton",
 		"EFFECT_BATON_STAT_SHIFT": "Every {0} enemies killed by this weapon in a wave: {1} from your highest stat, {2} to your lowest stat"
 	}
@@ -47,14 +49,15 @@ func _ready()->void:
 	_register_custom_effects()
 	_load_dissonance_content()
 	call_deferred("_normalize_stardust_unlock_state")
+	call_deferred("_normalize_conch_unlock_state")
 	var _dlc_activated = ProgressData.connect("dlc_activated", self, "_on_dlc_activated")
 	call_deferred("_load_dlc_content_if_available")
 	ModLoaderLog.info("Ready", DISSONANCE_LOG)
 
 
 func _load_dissonance_content()->void:
-	var content_loader = get_node("/root/ModLoader/Darkly77-ContentLoader/ContentLoader")
-	content_loader.load_data(dir + "content_data/dissonance_characters.tres", DISSONANCE_LOG)
+	_load_content_data_safe(dir + "content_data/dissonance_characters.tres")
+	_load_content_data_safe(dir + "content_data/dissonance_conch.tres")
 
 
 func _load_dlc_content_if_available() -> void:
@@ -63,8 +66,8 @@ func _load_dlc_content_if_available() -> void:
 	if not ProgressData.is_dlc_available_and_active("abyssal_terrors"):
 		return
 
-	var content_loader = get_node("/root/ModLoader/Darkly77-ContentLoader/ContentLoader")
-	content_loader.load_data(dir + "content_data/dissonance_dlc_content.tres", DISSONANCE_LOG)
+	if not _load_content_data_safe(dir + "content_data/dissonance_dlc_content.tres"):
+		return
 	dlc_content_loaded = true
 
 	_install_dlc_content_if_needed()
@@ -77,6 +80,17 @@ func _on_dlc_activated(dlc_id: String) -> void:
 	if dlc_id != "abyssal_terrors":
 		return
 	_load_dlc_content_if_available()
+
+
+func _load_content_data_safe(content_path: String) -> bool:
+	var content_loader = get_node("/root/ModLoader/Darkly77-ContentLoader/ContentLoader")
+	var content_data = load(content_path)
+	if content_data == null:
+		ModLoaderLog.error("Could not load ContentData: " + content_path, DISSONANCE_LOG)
+		return false
+
+	content_loader.load_data_by_content_data(content_data, DISSONANCE_LOG)
+	return true
 
 
 func _add_translations() -> void:
@@ -115,6 +129,10 @@ func _register_custom_effects() -> void:
 	var poet_enemy_scaling_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/characters/poet/poet_enemy_scaling_effect.gd")
 	if poet_enemy_scaling_effect != null and not _has_effect_with_id(poet_enemy_scaling_effect.get_id()):
 		ItemService.effects.push_back(poet_enemy_scaling_effect)
+
+	var conch_spawn_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/weapons/ranged/conch/conch_spawn_cursed_enemy_effect.gd")
+	if conch_spawn_effect != null and not _has_effect_with_id(conch_spawn_effect.get_id()):
+		ItemService.effects.push_back(conch_spawn_effect)
 
 
 func _has_effect_with_id(effect_id: String) -> bool:
@@ -238,4 +256,28 @@ func _normalize_stardust_unlock_state() -> void:
 
 	if (should_unlock_from_challenge or should_unlock_from_aeonian_clear) and not ProgressData.items_unlocked.has(stardust_item_hash):
 		ProgressData.items_unlocked.push_back(stardust_item_hash)
+		ItemService.init_unlocked_pool()
+
+
+func _normalize_conch_unlock_state() -> void:
+	var conch_weapon_id = "weapon_conch"
+	var conch_weapon_hash = Keys.generate_hash(conch_weapon_id)
+
+	if ProgressData.weapons_unlocked.has(conch_weapon_id):
+		ProgressData.weapons_unlocked.erase(conch_weapon_id)
+		if not ProgressData.weapons_unlocked.has(conch_weapon_hash):
+			ProgressData.weapons_unlocked.push_back(conch_weapon_hash)
+
+	var siren_challenge_hash = Keys.generate_hash("chal_siren")
+	var should_unlock_from_challenge = ChallengeService.is_challenge_completed(siren_challenge_hash)
+	var should_unlock_from_siren_clear = false
+	var siren_hash = Keys.generate_hash("character_siren")
+	for zone_id in [0, 1]:
+		var diff_info = ProgressData.get_character_difficulty_info(siren_hash, zone_id)
+		if diff_info != null and diff_info.max_difficulty_beaten.difficulty_value >= 0:
+			should_unlock_from_siren_clear = true
+			break
+
+	if (should_unlock_from_challenge or should_unlock_from_siren_clear) and not ProgressData.weapons_unlocked.has(conch_weapon_hash):
+		ProgressData.weapons_unlocked.push_back(conch_weapon_hash)
 		ItemService.init_unlocked_pool()

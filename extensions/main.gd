@@ -62,6 +62,17 @@ func _try_spawn_siren_cursed_enemy(enemy: Enemy, args: Entity.DieArgs) -> void:
 	_spawn_siren_cursed_enemy(enemy, player_index)
 
 
+func request_dissonance_cursed_enemy_spawn(enemy: Enemy, player_index: int) -> void:
+	if _cleaning_up:
+		return
+	if enemy == null or not is_instance_valid(enemy) or enemy is Boss or enemy.is_loot or not enemy.can_be_cursed:
+		return
+	if not _is_valid_siren_player_index(player_index):
+		return
+
+	_spawn_siren_cursed_enemy(enemy, player_index)
+
+
 func _spawn_siren_cursed_enemy(enemy: Enemy, player_index: int) -> void:
 	if enemy.filename == "":
 		return
