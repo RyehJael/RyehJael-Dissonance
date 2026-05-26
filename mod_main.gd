@@ -43,7 +43,12 @@ func _init():
 		"WEAPON_CONCH": "Conch",
 		"EFFECT_CONCH_SPAWN_CURSED_ENEMY": "{0}% chance to spawn a cursed enemy when killing an enemy with this weapon",
 		"WEAPON_BATON": "Baton",
-		"EFFECT_BATON_STAT_SHIFT": "Every {0} enemies killed by this weapon in a wave: {1} from your highest stat, {2} to your lowest stat"
+		"EFFECT_BATON_STAT_SHIFT": "Every {0} enemies killed by this weapon in a wave: {1} from your highest stat, {2} to your lowest stat",
+		"ITEM_CASH_COW": "Cash Cow",
+		"EFFECT_CASH_COW": "Spawns a Cash Cow that eats and stores materials. At the end of each wave, held materials increase by {0}%. Drops all stored materials when killed.",
+		"MATERIALS_HELD": "Materials held: {0}",
+		"CASH_COW_NAME": "Cash Cow",
+		"CASH_COW_BEHAVIOUR_DESCRIPTION": "Moves toward materials and eats them. Enemies can target and kill it. When killed, it drops all held materials and stays dead until the next wave."
 	}
 
 	ModLoaderMod.install_script_extension(ext_dir + "main.gd")
@@ -158,6 +163,10 @@ func _register_custom_effects() -> void:
 	var conch_spawn_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/weapons/ranged/conch/conch_spawn_cursed_enemy_effect.gd")
 	if conch_spawn_effect != null and not _has_effect_with_id(conch_spawn_effect.get_id()):
 		ItemService.effects.push_back(conch_spawn_effect)
+
+	var cash_cow_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_effect.gd")
+	if cash_cow_effect != null and not _has_effect_with_id(cash_cow_effect.get_id()):
+		ItemService.effects.push_back(cash_cow_effect)
 
 
 func _register_dissonance_challenges() -> void:

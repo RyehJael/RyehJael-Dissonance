@@ -4,6 +4,7 @@ const DISSONANCE_LOG = "RyehJael-Dissonance"
 var conductor_level_shift_hash = Keys.generate_hash("effect_conductor_level_shift")
 var siren_character_hash = Keys.generate_hash("character_siren")
 var influencer_character_hash = Keys.generate_hash("character_influencer")
+var cash_cow_item_hash = Keys.generate_hash("item_cash_cow")
 var chal_unlock_conductor_hash = Keys.generate_hash("chal_unlock_conductor")
 var chal_unlock_poet_hash = Keys.generate_hash("chal_unlock_poet")
 
@@ -14,6 +15,8 @@ func init_tracked_effects() -> Dictionary:
 		tracked_effects[siren_character_hash] = 0
 	if not tracked_effects.has(influencer_character_hash):
 		tracked_effects[influencer_character_hash] = 0
+	if not tracked_effects.has(cash_cow_item_hash):
+		tracked_effects[cash_cow_item_hash] = 0
 	return tracked_effects
 
 

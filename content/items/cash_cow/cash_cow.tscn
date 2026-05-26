@@ -1,0 +1,69 @@
+[gd_scene load_steps=15 format=2]
+
+[ext_resource path="res://entities/units/pet/scapegoat/scapegoat.tscn" type="PackedScene" id=1]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow.gd" type="Script" id=2]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_stats.tres" type="Resource" id=3]
+[ext_resource path="res://entities/units/movement_behaviors/follow_target_movement_behavior.gd" type="Script" id=4]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_target_behavior.gd" type="Script" id=5]
+[ext_resource path="res://entities/units/player/item_attract_area.gd" type="Script" id=6]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_shadow.png" type="Texture" id=7]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_body.png" type="Texture" id=8]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_head_1.png" type="Texture" id=9]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_head_0.png" type="Texture" id=10]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_ear_l.png" type="Texture" id=11]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_ear_r.png" type="Texture" id=12]
+
+[sub_resource type="CircleShape2D" id=1]
+
+[sub_resource type="CircleShape2D" id=2]
+
+[node name="CashCow" instance=ExtResource( 1 )]
+script = ExtResource( 2 )
+stats = ExtResource( 3 )
+can_be_targeted_by_enemies = true
+
+[node name="sp_shadow" parent="Animation/Viewport/offset" index="0"]
+texture = ExtResource( 7 )
+
+[node name="sp_body" parent="Animation/Viewport/offset" index="1"]
+texture = ExtResource( 8 )
+
+[node name="sp_head" parent="Animation/Viewport/offset/sp_body" index="0"]
+texture = ExtResource( 9 )
+
+[node name="sp_ear_l" parent="Animation/Viewport/offset/sp_body/sp_head" index="0"]
+texture = ExtResource( 11 )
+
+[node name="sp_ear_r" parent="Animation/Viewport/offset/sp_body/sp_head" index="1"]
+texture = ExtResource( 12 )
+
+[node name="MovementBehavior" parent="." index="5"]
+script = ExtResource( 4 )
+distance_to_target = 40.0
+
+[node name="TargetBehavior" parent="." index="6"]
+script = ExtResource( 5 )
+
+[node name="ItemAttractArea" type="Area2D" parent="." index="13"]
+visible = false
+collision_layer = 0
+collision_mask = 96
+script = ExtResource( 6 )
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ItemAttractArea" index="0"]
+scale = Vector2( 10, 10 )
+shape = SubResource( 1 )
+
+[node name="ItemPickUpArea" type="Area2D" parent="." index="14"]
+visible = false
+collision_mask = 96
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ItemPickUpArea" index="0"]
+position = Vector2( 0, -10 )
+scale = Vector2( 3, 3 )
+shape = SubResource( 2 )
+
+[connection signal="target_found" from="TargetBehavior" to="MovementBehavior" method="_on_TargetBehavior_target_found"]
+[connection signal="target_player" from="TargetBehavior" to="MovementBehavior" method="_on_TargetBehavior_target_player"]
+[connection signal="area_entered" from="ItemAttractArea" to="." method="_on_ItemAttractArea_area_entered"]
+[connection signal="area_entered" from="ItemPickUpArea" to="." method="_on_ItemPickUpArea_area_entered"]

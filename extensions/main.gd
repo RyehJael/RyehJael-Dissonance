@@ -10,6 +10,7 @@ const SIREN_RANGE_CHANCE_SCALING = 0.04
 const SIREN_MIN_SPAWN_DIST_FROM_PLAYER = 300
 const AEONIAN_MAX_HP_PER_EXTRA_SECOND = 10
 const AEONIAN_EXTRA_TIME_COLOR = Color.deepskyblue
+const CASH_COW_PICKUP_PLAYER_INDEX = -7777
 
 var _siren_spawn_cursed_enemy_hash = Keys.generate_hash("effect_siren_spawn_cursed_enemy")
 var _siren_bonus_materials_hash = Keys.generate_hash("effect_siren_bonus_materials_from_cursed_enemies")
@@ -43,6 +44,19 @@ func _on_enemy_died(enemy: Enemy, args: Entity.DieArgs) -> void:
 func spawn_loot(unit: Unit, entity_type: int, args: Entity.DieArgs) -> void:
 	.spawn_loot(unit, entity_type, args)
 	_try_spawn_siren_cursed_enemy_bonus_material(unit, entity_type, args)
+
+
+func on_gold_picked_up(gold: Node, player_index: int) -> void:
+	if player_index != CASH_COW_PICKUP_PLAYER_INDEX:
+		.on_gold_picked_up(gold, player_index)
+		return
+
+	if gold.already_picked_up:
+		return
+
+	gold.already_picked_up = true
+	_active_golds.erase(gold)
+	add_node_to_pool(gold, _gold_pool_id)
 
 
 func on_item_box_ban_button_pressed(item_data: ItemParentData, consumable: UpgradesUI.ConsumableToProcess) -> void:
