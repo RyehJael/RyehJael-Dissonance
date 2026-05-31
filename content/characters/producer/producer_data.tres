@@ -1,13 +1,11 @@
-[gd_resource type="Resource" load_steps=19 format=2]
+[gd_resource type="Resource" load_steps=17 format=2]
 
 [ext_resource path="res://items/characters/character_data.gd" type="Script" id=1]
-[ext_resource path="res://items/characters/beast_master/beast_master_icon.png" type="Texture" id=2]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/characters/producer/producer_icon.png" type="Texture" id=2]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/characters/producer/effects/producer_effect_1.tres" type="Resource" id=3]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/characters/producer/effects/producer_effect_2.tres" type="Resource" id=4]
-[ext_resource path="res://items/characters/beast_master/appearances/beast_master_eyes.tres" type="Resource" id=5]
-[ext_resource path="res://items/characters/beast_master/appearances/beast_master_fur.tres" type="Resource" id=6]
-[ext_resource path="res://items/characters/beast_master/appearances/beast_master_hat.tres" type="Resource" id=7]
-[ext_resource path="res://items/characters/beast_master/appearances/beast_master_mouth.tres" type="Resource" id=8]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/characters/producer/producer_eyes_appearance.tres" type="Resource" id=5]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/characters/producer/producer_mouth_appearance.tres" type="Resource" id=6]
 [ext_resource path="res://weapons/melee/hand/1/hand_data.tres" type="Resource" id=9]
 [ext_resource path="res://weapons/melee/fist/1/fist_data.tres" type="Resource" id=10]
 [ext_resource path="res://weapons/ranged/pistol/1/pistol_data.tres" type="Resource" id=11]
@@ -30,7 +28,7 @@ value = 1
 effects = [ ExtResource( 3 ), ExtResource( 4 ), ExtResource( 16 ) ]
 tracking_text = "stats_gained"
 max_nb = -1
-item_appearances = [ ExtResource( 5 ), ExtResource( 6 ), ExtResource( 7 ), ExtResource( 8 ) ]
+item_appearances = [ ExtResource( 5 ), ExtResource( 6 ) ]
 tags = [ "pet" ]
 wanted_tags = [ "pet" ]
 banned_item_groups = [  ]
