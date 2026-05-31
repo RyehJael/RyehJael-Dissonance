@@ -3,6 +3,9 @@ extends Pet
 
 const CASH_COW_PICKUP_PLAYER_INDEX := -7777
 const INVULNERABLE_COOLDOWN := 0.6
+const CASH_COW_HEAD_0 := preload("res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_head_0.png")
+const CASH_COW_HEAD_1 := preload("res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_head_1.png")
+const HEAD_TEXTURE_TRACK := "Animation/Viewport/offset/sp_body/sp_head:texture"
 
 export(AudioStream) var sound_dying
 export(AudioStream) var sound_rising
@@ -18,6 +21,8 @@ onready var life_bar = $"%LifeBar" as UIProgressBar
 
 func _ready() -> void:
 	._ready()
+	_replace_head_animation_textures()
+	_set_cash_cow_head_texture(CASH_COW_HEAD_1)
 	_animation_player.play("move")
 	var _error_hp_lifebar = connect("health_updated", self, "on_health_updated")
 
@@ -146,6 +151,33 @@ func _set_held_materials(value: int) -> void:
 func _sync_tracking() -> void:
 	if player_index >= 0 and player_index < RunData.get_player_count():
 		RunData.set_tracked_value(player_index, Keys.generate_hash("item_cash_cow"), held_materials)
+
+
+func _replace_head_animation_textures() -> void:
+	for animation_name in _animation_player.get_animation_list():
+		var animation = _animation_player.get_animation(animation_name)
+		if animation == null:
+			continue
+
+		for track_index in range(animation.get_track_count()):
+			if str(animation.track_get_path(track_index)) != HEAD_TEXTURE_TRACK:
+				continue
+
+			for key_index in range(animation.track_get_key_count(track_index)):
+				var texture = animation.track_get_key_value(track_index, key_index)
+				animation.track_set_key_value(track_index, key_index, _get_cash_cow_head_texture(texture))
+
+
+func _get_cash_cow_head_texture(texture) -> Texture:
+	if texture is Texture and texture.resource_path.find("head_0") != -1:
+		return CASH_COW_HEAD_0
+	return CASH_COW_HEAD_1
+
+
+func _set_cash_cow_head_texture(texture: Texture) -> void:
+	var head = get_node_or_null("Animation/Viewport/offset/sp_body/sp_head") as Sprite
+	if head != null:
+		head.texture = texture
 
 
 func _on_HealingTriggeringZone_body_entered(_body) -> void:

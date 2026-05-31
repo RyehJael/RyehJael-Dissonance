@@ -14,6 +14,7 @@ const AEONIAN_EXTRA_TIME_COLOR = Color.deepskyblue
 const CASH_COW_PICKUP_PLAYER_INDEX = -7777
 const PRODUCER_PET_INDICATOR_SCRIPT = preload("res://mods-unpacked/RyehJael-Dissonance/content/characters/producer/producer_pet_indicator.gd")
 const PRODUCER_PET_INDICATOR_NODE_NAME = "DissonanceProducerPetIndicator"
+const PRODUCER_PET_AFFINITY_RANGE_SCALING := 0.5
 
 var _siren_spawn_cursed_enemy_hash = Keys.generate_hash("effect_siren_spawn_cursed_enemy")
 var _siren_bonus_materials_hash = Keys.generate_hash("effect_siren_bonus_materials_from_cursed_enemies")
@@ -32,7 +33,7 @@ var _pending_siren_spawn_sources := {}
 var _aeonian_round_duration_bonus = 0
 var _dissonance_cursed_enemy_kills_this_wave := [0, 0, 0, 0]
 var _producer_pet_affinity_progress := {}
-var _producer_pet_indicators := {}
+var _producer_affinity_indicators := {}
 
 
 func _ready() -> void:
@@ -256,7 +257,7 @@ func _process_producer_pet_affinity(delta: float) -> void:
 		_clear_producer_pet_affinity_state()
 		return
 
-	var visible_pet_ids := {}
+	var visible_producer_ids := {}
 	var has_active_producer := false
 	for player_index in RunData.get_player_count():
 		var affinity_data = _get_producer_pet_affinity_data(player_index)
@@ -267,7 +268,7 @@ func _process_producer_pet_affinity(delta: float) -> void:
 		if player == null:
 			continue
 
-		var affinity_range = max(0.0, float(affinity_data.get("range", 0.0)) + Utils.get_stat(Keys.stat_range_hash, player_index))
+		var affinity_range = max(0.0, float(affinity_data.get("range", 0.0)) + Utils.get_stat(Keys.stat_range_hash, player_index) * PRODUCER_PET_AFFINITY_RANGE_SCALING)
 		var seconds_required = max(0.1, float(affinity_data.get("seconds_required", 10.0)))
 		var stat_gain = int(affinity_data.get("stat_gain", 1))
 		if affinity_range <= 0.0 or stat_gain == 0:
@@ -276,25 +277,29 @@ func _process_producer_pet_affinity(delta: float) -> void:
 		has_active_producer = true
 		_ensure_producer_pet_affinity_progress_slot(player_index)
 
-		var active_pet_ids := {}
+		var active_pet_type_keys := {}
+		var has_pet_in_range := false
 		var range_sq = affinity_range * affinity_range
 		for pet in _get_producer_player_pets(player_index):
 			if not _is_valid_producer_pet(pet, player_index):
 				continue
 
-			var pet_id = pet.get_instance_id()
-			active_pet_ids[pet_id] = true
+			var pet_type_key = _get_producer_pet_type_key(pet)
+			active_pet_type_keys[pet_type_key] = true
 			if player.global_position.distance_squared_to(pet.global_position) <= range_sq:
-				visible_pet_ids[pet_id] = pet
-				_show_producer_pet_indicator(pet, affinity_range)
-				_advance_producer_pet_affinity_progress(player_index, pet, seconds_required, stat_gain, delta)
+				has_pet_in_range = true
+				_advance_producer_pet_affinity_progress(player_index, pet, pet_type_key, seconds_required, stat_gain, delta)
 
-		_remove_inactive_producer_pet_affinity_progress(player_index, active_pet_ids)
+		if has_pet_in_range:
+			visible_producer_ids[player.get_instance_id()] = player
+			_show_producer_affinity_indicator(player, affinity_range)
+
+		_remove_inactive_producer_pet_affinity_progress(player_index, active_pet_type_keys)
 
 	if not has_active_producer:
 		_producer_pet_affinity_progress.clear()
 
-	_hide_inactive_producer_pet_indicators(visible_pet_ids)
+	_hide_inactive_producer_affinity_indicators(visible_producer_ids)
 
 
 func _get_producer_pet_affinity_data(player_index: int) -> Dictionary:
@@ -349,14 +354,13 @@ func _ensure_producer_pet_affinity_progress_slot(player_index: int) -> void:
 		_producer_pet_affinity_progress[player_index] = {}
 
 
-func _advance_producer_pet_affinity_progress(player_index: int, pet: Node2D, seconds_required: float, stat_gain: int, delta: float) -> void:
+func _advance_producer_pet_affinity_progress(player_index: int, pet: Node2D, pet_type_key: String, seconds_required: float, stat_gain: int, delta: float) -> void:
 	var stat_hash = _get_producer_pet_stat_hash(pet)
-	if stat_hash == Keys.empty_hash:
+	if stat_hash == Keys.empty_hash or pet_type_key.empty():
 		return
 
-	var pet_id = pet.get_instance_id()
-	var progress_by_pet: Dictionary = _producer_pet_affinity_progress[player_index]
-	var progress = float(progress_by_pet[pet_id]) if progress_by_pet.has(pet_id) else 0.0
+	var progress_by_pet_type: Dictionary = _producer_pet_affinity_progress[player_index]
+	var progress = float(progress_by_pet_type[pet_type_key]) if progress_by_pet_type.has(pet_type_key) else 0.0
 	progress += delta
 
 	var total_gain = 0
@@ -364,25 +368,27 @@ func _advance_producer_pet_affinity_progress(player_index: int, pet: Node2D, sec
 		total_gain += stat_gain
 		progress -= seconds_required
 
-	progress_by_pet[pet_id] = progress
+	progress_by_pet_type[pet_type_key] = progress
 
 	if total_gain == 0:
 		return
 
 	RunData.add_stat(stat_hash, total_gain, player_index)
+	if player_index >= 0 and player_index < RunData.tracked_item_effects.size() and not RunData.tracked_item_effects[player_index].has(_producer_character_hash):
+		RunData.tracked_item_effects[player_index][_producer_character_hash] = 0
 	RunData.add_tracked_value(player_index, _producer_character_hash, total_gain)
 	LinkedStats.reset_player(player_index)
 	EntityService.reset_cache()
 
 
-func _remove_inactive_producer_pet_affinity_progress(player_index: int, active_pet_ids: Dictionary) -> void:
+func _remove_inactive_producer_pet_affinity_progress(player_index: int, active_pet_type_keys: Dictionary) -> void:
 	if not _producer_pet_affinity_progress.has(player_index):
 		return
 
-	var progress_by_pet: Dictionary = _producer_pet_affinity_progress[player_index]
-	for pet_id in progress_by_pet.keys():
-		if not active_pet_ids.has(pet_id):
-			progress_by_pet.erase(pet_id)
+	var progress_by_pet_type: Dictionary = _producer_pet_affinity_progress[player_index]
+	for pet_type_key in progress_by_pet_type.keys():
+		if not active_pet_type_keys.has(pet_type_key):
+			progress_by_pet_type.erase(pet_type_key)
 
 
 func _get_producer_pet_stat_hash(pet) -> int:
@@ -410,6 +416,18 @@ func _get_producer_pet_stat_hash(pet) -> int:
 			return Keys.stat_harvesting_hash
 
 	return _infer_producer_pet_stat_hash(pet)
+
+
+func _get_producer_pet_type_key(pet) -> String:
+	var script = pet.get_script()
+	if script != null and not script.resource_path.empty():
+		return script.resource_path
+
+	var filename = pet.get("filename")
+	if filename is String and not filename.empty():
+		return filename
+
+	return str(_get_producer_pet_stat_hash(pet))
 
 
 func _infer_producer_pet_stat_hash(pet) -> int:
@@ -450,51 +468,51 @@ func _get_producer_object_script_name(object) -> String:
 	return script.resource_path.get_file().get_basename()
 
 
-func _show_producer_pet_indicator(pet: Node2D, affinity_range: float) -> void:
-	var indicator = _get_or_create_producer_pet_indicator(pet)
+func _show_producer_affinity_indicator(producer: Node2D, affinity_range: float) -> void:
+	var indicator = _get_or_create_producer_affinity_indicator(producer)
 	if indicator == null:
 		return
 
 	indicator.call("setup", affinity_range)
 	indicator.show()
-	_producer_pet_indicators[pet.get_instance_id()] = pet
+	_producer_affinity_indicators[producer.get_instance_id()] = producer
 
 
-func _get_or_create_producer_pet_indicator(pet: Node2D) -> Node2D:
+func _get_or_create_producer_affinity_indicator(producer: Node2D) -> Node2D:
 	var indicator: Node2D = null
-	if pet.has_node(PRODUCER_PET_INDICATOR_NODE_NAME):
-		indicator = pet.get_node(PRODUCER_PET_INDICATOR_NODE_NAME) as Node2D
+	if producer.has_node(PRODUCER_PET_INDICATOR_NODE_NAME):
+		indicator = producer.get_node(PRODUCER_PET_INDICATOR_NODE_NAME) as Node2D
 	else:
 		indicator = Node2D.new()
 		indicator.name = PRODUCER_PET_INDICATOR_NODE_NAME
 		indicator.z_index = 100
 		indicator.set_script(PRODUCER_PET_INDICATOR_SCRIPT)
-		pet.add_child(indicator)
+		producer.add_child(indicator)
 
 	return indicator
 
 
-func _hide_inactive_producer_pet_indicators(visible_pet_ids: Dictionary) -> void:
-	for pet_id in _producer_pet_indicators.keys():
-		var pet = _producer_pet_indicators[pet_id]
-		if visible_pet_ids.has(pet_id) and pet != null and is_instance_valid(pet):
+func _hide_inactive_producer_affinity_indicators(visible_producer_ids: Dictionary) -> void:
+	for producer_id in _producer_affinity_indicators.keys():
+		var producer = _producer_affinity_indicators[producer_id]
+		if visible_producer_ids.has(producer_id) and producer != null and is_instance_valid(producer):
 			continue
 
-		_hide_producer_pet_indicator(pet)
-		_producer_pet_indicators.erase(pet_id)
+		_hide_producer_affinity_indicator(producer)
+		_producer_affinity_indicators.erase(producer_id)
 
 
-func _hide_producer_pet_indicator(pet) -> void:
-	if pet == null or not is_instance_valid(pet) or not (pet is Node):
+func _hide_producer_affinity_indicator(producer) -> void:
+	if producer == null or not is_instance_valid(producer) or not (producer is Node):
 		return
-	if not pet.has_node(PRODUCER_PET_INDICATOR_NODE_NAME):
+	if not producer.has_node(PRODUCER_PET_INDICATOR_NODE_NAME):
 		return
-	pet.get_node(PRODUCER_PET_INDICATOR_NODE_NAME).hide()
+	producer.get_node(PRODUCER_PET_INDICATOR_NODE_NAME).hide()
 
 
 func _clear_producer_pet_affinity_state() -> void:
 	_producer_pet_affinity_progress.clear()
-	_hide_inactive_producer_pet_indicators({})
+	_hide_inactive_producer_affinity_indicators({})
 
 
 func _try_complete_aeonian_unlock_challenge() -> void:

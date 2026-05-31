@@ -20,7 +20,7 @@
 [resource]
 script = ExtResource( 1 )
 my_id = "character_producer"
-unlocked_by_default = true
+unlocked_by_default = false
 icon = ExtResource( 2 )
 name = "CHARACTER_PRODUCER"
 tier = 0

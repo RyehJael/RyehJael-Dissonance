@@ -7,7 +7,7 @@
 [resource]
 script = ExtResource( 1 )
 my_id = "item_cash_cow"
-unlocked_by_default = true
+unlocked_by_default = false
 can_be_looted = true
 icon = ExtResource( 3 )
 name = "ITEM_CASH_COW"

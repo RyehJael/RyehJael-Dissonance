@@ -4,9 +4,11 @@ const DISSONANCE_LOG = "RyehJael-Dissonance"
 var conductor_level_shift_hash = Keys.generate_hash("effect_conductor_level_shift")
 var siren_character_hash = Keys.generate_hash("character_siren")
 var influencer_character_hash = Keys.generate_hash("character_influencer")
+var producer_character_hash = Keys.generate_hash("character_producer")
 var cash_cow_item_hash = Keys.generate_hash("item_cash_cow")
 var chal_unlock_conductor_hash = Keys.generate_hash("chal_unlock_conductor")
 var chal_unlock_poet_hash = Keys.generate_hash("chal_unlock_poet")
+var chal_unlock_producer_hash = Keys.generate_hash("chal_unlock_producer")
 
 
 func init_tracked_effects() -> Dictionary:
@@ -15,6 +17,8 @@ func init_tracked_effects() -> Dictionary:
 		tracked_effects[siren_character_hash] = 0
 	if not tracked_effects.has(influencer_character_hash):
 		tracked_effects[influencer_character_hash] = 0
+	if not tracked_effects.has(producer_character_hash):
+		tracked_effects[producer_character_hash] = 0
 	if not tracked_effects.has(cash_cow_item_hash):
 		tracked_effects[cash_cow_item_hash] = 0
 	return tracked_effects
@@ -98,6 +102,7 @@ func _is_dissonance_valid_player_index(player_index: int) -> bool:
 func _try_complete_dissonance_stat_challenges(player_index: int) -> void:
 	_try_complete_conductor_unlock_challenge(player_index)
 	_try_complete_poet_unlock_challenge(player_index)
+	_try_complete_producer_unlock_challenge(player_index)
 
 
 func _try_complete_conductor_unlock_challenge(player_index: int) -> void:
@@ -125,6 +130,17 @@ func _try_complete_poet_unlock_challenge(player_index: int) -> void:
 	var required_value = challenge.value
 	if RunData.get_stat(Keys.stat_curse_hash, player_index) >= required_value:
 		ChallengeService.complete_challenge(chal_unlock_poet_hash)
+
+
+func _try_complete_producer_unlock_challenge(player_index: int) -> void:
+	if ChallengeService.is_challenge_completed(chal_unlock_producer_hash):
+		return
+
+	var challenge = ChallengeService.get_chal(chal_unlock_producer_hash)
+	if challenge == null:
+		return
+	if RunData.get_nb_pets(player_index) >= challenge.value:
+		ChallengeService.complete_challenge(chal_unlock_producer_hash)
 
 
 func level_up(player_index: int) -> void:

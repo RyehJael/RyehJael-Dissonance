@@ -34,12 +34,14 @@ func _init():
 		"CHAL_UNLOCK_CONDUCTOR": "Conductor",
 		"CHAL_UNLOCK_INFLUENCER": "Influencer",
 		"CHAL_UNLOCK_POET": "Poet",
+		"CHAL_UNLOCK_PRODUCER": "Producer",
 		"CHAL_UNLOCK_SIREN": "Siren",
 		"CHAL_DISSONANCE_REACH_WAVE": "Reach wave {0}",
 		"CHAL_DISSONANCE_PRIMARY_STATS": "Have at least {0} of every primary stat",
 		"CHAL_DISSONANCE_BAN_ITEMS": "Ban {0} items in a single run",
 		"CHAL_DISSONANCE_REACH_STAT": "Reach {0} {1}",
 		"CHAL_DISSONANCE_CURSED_KILLS_WAVE": "Kill {0} cursed enemies in a single wave",
+		"CHAL_DISSONANCE_OWN_PETS_AT_ONCE": "Own {0} pets at one time",
 		"ITEM_STARDUST": "Stardust",
 		"EFFECT_ROUND_DURATION_BONUS": "Rounds last +{0}s longer",
 		"WEAPON_CONCH": "Conch",
@@ -72,6 +74,7 @@ func _ready()->void:
 	call_deferred("_normalize_dissonance_character_unlock_states")
 	call_deferred("_add_conch_starting_weapons")
 	call_deferred("_normalize_stardust_unlock_state")
+	call_deferred("_normalize_cash_cow_unlock_state")
 	call_deferred("_normalize_conch_unlock_state")
 	var _dlc_activated = ProgressData.connect("dlc_activated", self, "_on_dlc_activated")
 	call_deferred("_load_dlc_content_if_available")
@@ -178,12 +181,14 @@ func _register_custom_effects() -> void:
 func _register_dissonance_challenges() -> void:
 	for challenge_path in [
 		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_aeonian.tres",
+		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_producer.tres",
 		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_conductor.tres",
 		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_siren.tres",
 		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_unlock_aeonian.tres",
 		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_unlock_conductor.tres",
 		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_unlock_influencer.tres",
 		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_unlock_poet.tres",
+		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_unlock_producer.tres",
 		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_unlock_siren.tres"
 	]:
 		var challenge = load(challenge_path)
@@ -202,6 +207,7 @@ func _normalize_dissonance_character_unlock_states() -> void:
 		"character_conductor",
 		"character_influencer",
 		"character_poet",
+		"character_producer",
 		"character_siren"
 	]:
 		var challenge_id = "chal_unlock_" + character_id.replace("character_", "")
@@ -378,6 +384,30 @@ func _normalize_stardust_unlock_state() -> void:
 
 	if (should_unlock_from_challenge or should_unlock_from_aeonian_clear) and not ProgressData.items_unlocked.has(stardust_item_hash):
 		ProgressData.items_unlocked.push_back(stardust_item_hash)
+		ItemService.init_unlocked_pool()
+
+
+func _normalize_cash_cow_unlock_state() -> void:
+	var cash_cow_item_id = "item_cash_cow"
+	var cash_cow_item_hash = Keys.generate_hash(cash_cow_item_id)
+
+	if ProgressData.items_unlocked.has(cash_cow_item_id):
+		ProgressData.items_unlocked.erase(cash_cow_item_id)
+	if ProgressData.items_unlocked.has(cash_cow_item_hash):
+		ProgressData.items_unlocked.erase(cash_cow_item_hash)
+
+	var producer_challenge_hash = Keys.generate_hash("chal_producer")
+	var should_unlock_from_challenge = ProgressData.is_unlock_all_save() or ChallengeService.is_challenge_completed(producer_challenge_hash)
+	var should_unlock_from_producer_clear = false
+	var producer_hash = Keys.generate_hash("character_producer")
+	for zone_id in [0, 1]:
+		var diff_info = ProgressData.get_character_difficulty_info(producer_hash, zone_id)
+		if diff_info != null and diff_info.max_difficulty_beaten.difficulty_value >= 0:
+			should_unlock_from_producer_clear = true
+			break
+
+	if should_unlock_from_challenge or should_unlock_from_producer_clear:
+		ProgressData.items_unlocked.push_back(cash_cow_item_hash)
 		ItemService.init_unlocked_pool()
 
 
