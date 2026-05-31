@@ -14,7 +14,7 @@ const AEONIAN_EXTRA_TIME_COLOR = Color.deepskyblue
 const CASH_COW_PICKUP_PLAYER_INDEX = -7777
 const PRODUCER_PET_INDICATOR_SCRIPT = preload("res://mods-unpacked/RyehJael-Dissonance/content/characters/producer/producer_pet_indicator.gd")
 const PRODUCER_PET_INDICATOR_NODE_NAME = "DissonanceProducerPetIndicator"
-const PRODUCER_PET_AFFINITY_RANGE_SCALING := 0.5
+const PRODUCER_PET_AFFINITY_RANGE_SCALING := 1.0
 
 var _siren_spawn_cursed_enemy_hash = Keys.generate_hash("effect_siren_spawn_cursed_enemy")
 var _siren_bonus_materials_hash = Keys.generate_hash("effect_siren_bonus_materials_from_cursed_enemies")
@@ -327,6 +327,10 @@ func _get_producer_player_pets(player_index: int) -> Array:
 		if _is_valid_producer_pet(pet, player_index):
 			pets.push_back(pet)
 
+	for structure in _entity_spawner.structures:
+		if structure != null and is_instance_valid(structure) and bool(structure.get("is_pet")) and _is_valid_producer_pet(structure, player_index):
+			pets.push_back(structure)
+
 	var player = _get_valid_producer_player(player_index)
 	if player != null:
 		for jellyshield in player.jellyshields:
@@ -411,7 +415,9 @@ func _get_producer_pet_stat_hash(pet) -> int:
 		"scapegoat":
 			return Keys.stat_armor_hash
 		"jellyshield":
-			return Keys.stat_armor_hash
+			return Keys.stat_luck_hash
+		"wandering_bot":
+			return Keys.stat_speed_hash
 		"cash_cow":
 			return Keys.stat_harvesting_hash
 

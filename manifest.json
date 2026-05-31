@@ -2,24 +2,44 @@
 	"name": "Dissonance",
 	"namespace": "RyehJael",
 	"version_number": "1.0.0",
-	"description": "Adds new characters, pets, and items.",
+	"description": "Adds new characters, pets, items, weapons, challenges, and gameplay mechanics.",
 	"website_url": "https://github.com/BrotatoMods",
 	"dependencies": [
 		"Darkly77-ContentLoader"
 	],
 	"extra": {
 		"godot": {
-			"incompatibilities": [],
 			"authors": [
 				"RyehJael"
 			],
-			"compatible_mod_loader_version": [
-				"3.0.0"
+			"optional_dependencies": [
+
 			],
 			"compatible_game_version": [
-				"0.6.1.6"
+				"1.1.4.0"
 			],
-			"config_defaults": {}
+			"compatible_mod_loader_version": [
+				"6.2.0"
+			],
+			"incompatibilities": [
+
+			],
+			"load_before": [
+
+			],
+			"tags": [
+				"Characters",
+				"Weapons",
+				"Items",
+				"Pets",
+				"Challenges",
+				"New Mechanics"
+			],
+			"config_schema": {
+
+			},
+			"description_rich": "",
+			"image": null
 		}
 	}
 }

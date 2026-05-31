@@ -1,6 +1,6 @@
 extends "res://items/global/effect.gd"
 
-const RANGE_SCALING := 0.5
+const RANGE_SCALING := 1.0
 
 export(float) var seconds_required := 10.0
 export(int) var stat_gain := 1
