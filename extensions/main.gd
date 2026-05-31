@@ -7,10 +7,13 @@ const SIREN_CURSE_DAMAGE_BOOST = 25
 const SIREN_CURSE_SPEED_BOOST = 15
 const SIREN_MAX_CURSE_HP_BOOST = 300
 const SIREN_RANGE_CHANCE_SCALING = 0.04
+const SIREN_MAX_SPAWN_CHANCE = 75.0
 const SIREN_MIN_SPAWN_DIST_FROM_PLAYER = 300
 const AEONIAN_MAX_HP_PER_EXTRA_SECOND = 10
 const AEONIAN_EXTRA_TIME_COLOR = Color.deepskyblue
 const CASH_COW_PICKUP_PLAYER_INDEX = -7777
+const PRODUCER_PET_INDICATOR_SCRIPT = preload("res://mods-unpacked/RyehJael-Dissonance/content/characters/producer/producer_pet_indicator.gd")
+const PRODUCER_PET_INDICATOR_NODE_NAME = "DissonanceProducerPetIndicator"
 
 var _siren_spawn_cursed_enemy_hash = Keys.generate_hash("effect_siren_spawn_cursed_enemy")
 var _siren_bonus_materials_hash = Keys.generate_hash("effect_siren_bonus_materials_from_cursed_enemies")
@@ -19,6 +22,8 @@ var _influencer_ban_harvesting_hash = Keys.generate_hash("effect_influencer_harv
 var _influencer_character_hash = Keys.generate_hash("character_influencer")
 var _aeonian_round_duration_hash = Keys.generate_hash("effect_aeonian_round_duration_per_max_hp")
 var _round_duration_bonus_hash = Keys.generate_hash("effect_round_duration_bonus")
+var _producer_pet_affinity_hash = Keys.generate_hash("effect_producer_pet_affinity")
+var _producer_character_hash = Keys.generate_hash("character_producer")
 var _chal_unlock_aeonian_hash = Keys.generate_hash("chal_unlock_aeonian")
 var _chal_unlock_influencer_hash = Keys.generate_hash("chal_unlock_influencer")
 var _chal_unlock_siren_hash = Keys.generate_hash("chal_unlock_siren")
@@ -26,6 +31,8 @@ var _siren_curse_enemy_effect_behavior_data: Resource = null
 var _pending_siren_spawn_sources := {}
 var _aeonian_round_duration_bonus = 0
 var _dissonance_cursed_enemy_kills_this_wave := [0, 0, 0, 0]
+var _producer_pet_affinity_progress := {}
+var _producer_pet_indicators := {}
 
 
 func _ready() -> void:
@@ -33,6 +40,11 @@ func _ready() -> void:
 	_siren_curse_enemy_effect_behavior_data = load(CURSE_ENEMY_EFFECT_BEHAVIOR_PATH)
 	_try_complete_aeonian_unlock_challenge()
 	call_deferred("_apply_round_duration_bonus")
+
+
+func _physics_process(delta: float) -> void:
+	._physics_process(delta)
+	_process_producer_pet_affinity(delta)
 
 
 func _on_enemy_died(enemy: Enemy, args: Entity.DieArgs) -> void:
@@ -239,6 +251,252 @@ func _try_add_influencer_ban_harvesting(player_index: int) -> void:
 	EntityService.reset_cache()
 
 
+func _process_producer_pet_affinity(delta: float) -> void:
+	if _cleaning_up or _entity_spawner == null or not RunData.wave_in_progress:
+		_clear_producer_pet_affinity_state()
+		return
+
+	var visible_pet_ids := {}
+	var has_active_producer := false
+	for player_index in RunData.get_player_count():
+		var affinity_data = _get_producer_pet_affinity_data(player_index)
+		if affinity_data.empty():
+			continue
+
+		var player = _get_valid_producer_player(player_index)
+		if player == null:
+			continue
+
+		var affinity_range = max(0.0, float(affinity_data.get("range", 0.0)) + Utils.get_stat(Keys.stat_range_hash, player_index))
+		var seconds_required = max(0.1, float(affinity_data.get("seconds_required", 10.0)))
+		var stat_gain = int(affinity_data.get("stat_gain", 1))
+		if affinity_range <= 0.0 or stat_gain == 0:
+			continue
+
+		has_active_producer = true
+		_ensure_producer_pet_affinity_progress_slot(player_index)
+
+		var active_pet_ids := {}
+		var range_sq = affinity_range * affinity_range
+		for pet in _get_producer_player_pets(player_index):
+			if not _is_valid_producer_pet(pet, player_index):
+				continue
+
+			var pet_id = pet.get_instance_id()
+			active_pet_ids[pet_id] = true
+			if player.global_position.distance_squared_to(pet.global_position) <= range_sq:
+				visible_pet_ids[pet_id] = pet
+				_show_producer_pet_indicator(pet, affinity_range)
+				_advance_producer_pet_affinity_progress(player_index, pet, seconds_required, stat_gain, delta)
+
+		_remove_inactive_producer_pet_affinity_progress(player_index, active_pet_ids)
+
+	if not has_active_producer:
+		_producer_pet_affinity_progress.clear()
+
+	_hide_inactive_producer_pet_indicators(visible_pet_ids)
+
+
+func _get_producer_pet_affinity_data(player_index: int) -> Dictionary:
+	if player_index < 0 or player_index >= RunData.get_player_count():
+		return {}
+
+	var effect = RunData.get_player_effect(_producer_pet_affinity_hash, player_index)
+	if effect is Dictionary:
+		return effect
+	return {}
+
+
+func _get_valid_producer_player(player_index: int) -> Player:
+	if player_index < 0 or player_index >= _players.size():
+		return null
+	var player = _players[player_index]
+	if player == null or not is_instance_valid(player) or player.dead:
+		return null
+	return player
+
+
+func _get_producer_player_pets(player_index: int) -> Array:
+	var pets := []
+	for pet in _entity_spawner.pets:
+		if _is_valid_producer_pet(pet, player_index):
+			pets.push_back(pet)
+
+	var player = _get_valid_producer_player(player_index)
+	if player != null:
+		for jellyshield in player.jellyshields:
+			if _is_valid_producer_pet(jellyshield, player_index):
+				pets.push_back(jellyshield)
+
+	return pets
+
+
+func _is_valid_producer_pet(pet, player_index: int) -> bool:
+	if pet == null or not is_instance_valid(pet) or not (pet is Node2D):
+		return false
+	if bool(pet.get("dead")):
+		return false
+
+	var pet_player_index = pet.get("player_index")
+	if pet_player_index == null or int(pet_player_index) != player_index:
+		return false
+
+	return _get_producer_pet_stat_hash(pet) != Keys.empty_hash
+
+
+func _ensure_producer_pet_affinity_progress_slot(player_index: int) -> void:
+	if not _producer_pet_affinity_progress.has(player_index):
+		_producer_pet_affinity_progress[player_index] = {}
+
+
+func _advance_producer_pet_affinity_progress(player_index: int, pet: Node2D, seconds_required: float, stat_gain: int, delta: float) -> void:
+	var stat_hash = _get_producer_pet_stat_hash(pet)
+	if stat_hash == Keys.empty_hash:
+		return
+
+	var pet_id = pet.get_instance_id()
+	var progress_by_pet: Dictionary = _producer_pet_affinity_progress[player_index]
+	var progress = float(progress_by_pet[pet_id]) if progress_by_pet.has(pet_id) else 0.0
+	progress += delta
+
+	var total_gain = 0
+	while progress >= seconds_required:
+		total_gain += stat_gain
+		progress -= seconds_required
+
+	progress_by_pet[pet_id] = progress
+
+	if total_gain == 0:
+		return
+
+	RunData.add_stat(stat_hash, total_gain, player_index)
+	RunData.add_tracked_value(player_index, _producer_character_hash, total_gain)
+	LinkedStats.reset_player(player_index)
+	EntityService.reset_cache()
+
+
+func _remove_inactive_producer_pet_affinity_progress(player_index: int, active_pet_ids: Dictionary) -> void:
+	if not _producer_pet_affinity_progress.has(player_index):
+		return
+
+	var progress_by_pet: Dictionary = _producer_pet_affinity_progress[player_index]
+	for pet_id in progress_by_pet.keys():
+		if not active_pet_ids.has(pet_id):
+			progress_by_pet.erase(pet_id)
+
+
+func _get_producer_pet_stat_hash(pet) -> int:
+	var script_name = _get_producer_object_script_name(pet)
+	match script_name:
+		"ratzilla":
+			return Keys.stat_max_hp_hash
+		"blazemander":
+			return Keys.stat_elemental_damage_hash
+		"bonk_dog":
+			return Keys.stat_melee_damage_hash
+		"bot_o_mine":
+			return Keys.stat_engineering_hash
+		"catling_gun":
+			return Keys.stat_ranged_damage_hash
+		"doc_moth":
+			return Keys.stat_hp_regeneration_hash
+		"lootworm":
+			return Keys.stat_harvesting_hash
+		"scapegoat":
+			return Keys.stat_armor_hash
+		"jellyshield":
+			return Keys.stat_armor_hash
+		"cash_cow":
+			return Keys.stat_harvesting_hash
+
+	return _infer_producer_pet_stat_hash(pet)
+
+
+func _infer_producer_pet_stat_hash(pet) -> int:
+	if not pet.has_method("get_stats"):
+		return Keys.empty_hash
+
+	var best_stat_hash = Keys.empty_hash
+	var best_scaling_weight = -1.0
+	for stats_resource in pet.get_stats():
+		if stats_resource == null:
+			continue
+		var scaling_stats = stats_resource.get("scaling_stats")
+		if not (scaling_stats is Array):
+			continue
+
+		for scaling_stat in scaling_stats:
+			if not (scaling_stat is Array) or scaling_stat.size() < 2:
+				continue
+			if not (scaling_stat[0] is String):
+				continue
+
+			var stat_hash = Keys.generate_hash(scaling_stat[0])
+			if not Utils.is_stat_key(stat_hash):
+				continue
+
+			var scaling_weight = abs(float(scaling_stat[1]))
+			if scaling_weight > best_scaling_weight:
+				best_stat_hash = stat_hash
+				best_scaling_weight = scaling_weight
+
+	return best_stat_hash
+
+
+func _get_producer_object_script_name(object) -> String:
+	var script = object.get_script()
+	if script == null:
+		return ""
+	return script.resource_path.get_file().get_basename()
+
+
+func _show_producer_pet_indicator(pet: Node2D, affinity_range: float) -> void:
+	var indicator = _get_or_create_producer_pet_indicator(pet)
+	if indicator == null:
+		return
+
+	indicator.call("setup", affinity_range)
+	indicator.show()
+	_producer_pet_indicators[pet.get_instance_id()] = pet
+
+
+func _get_or_create_producer_pet_indicator(pet: Node2D) -> Node2D:
+	var indicator: Node2D = null
+	if pet.has_node(PRODUCER_PET_INDICATOR_NODE_NAME):
+		indicator = pet.get_node(PRODUCER_PET_INDICATOR_NODE_NAME) as Node2D
+	else:
+		indicator = Node2D.new()
+		indicator.name = PRODUCER_PET_INDICATOR_NODE_NAME
+		indicator.z_index = 100
+		indicator.set_script(PRODUCER_PET_INDICATOR_SCRIPT)
+		pet.add_child(indicator)
+
+	return indicator
+
+
+func _hide_inactive_producer_pet_indicators(visible_pet_ids: Dictionary) -> void:
+	for pet_id in _producer_pet_indicators.keys():
+		var pet = _producer_pet_indicators[pet_id]
+		if visible_pet_ids.has(pet_id) and pet != null and is_instance_valid(pet):
+			continue
+
+		_hide_producer_pet_indicator(pet)
+		_producer_pet_indicators.erase(pet_id)
+
+
+func _hide_producer_pet_indicator(pet) -> void:
+	if pet == null or not is_instance_valid(pet) or not (pet is Node):
+		return
+	if not pet.has_node(PRODUCER_PET_INDICATOR_NODE_NAME):
+		return
+	pet.get_node(PRODUCER_PET_INDICATOR_NODE_NAME).hide()
+
+
+func _clear_producer_pet_affinity_state() -> void:
+	_producer_pet_affinity_progress.clear()
+	_hide_inactive_producer_pet_indicators({})
+
+
 func _try_complete_aeonian_unlock_challenge() -> void:
 	var challenge = ChallengeService.get_chal(_chal_unlock_aeonian_hash)
 	if challenge == null:
@@ -271,7 +529,7 @@ func _get_siren_spawn_cursed_enemy_chance(player_index: int) -> float:
 	if base_chance <= 0:
 		return 0.0
 	var range_bonus = max(0.0, Utils.get_stat(Keys.stat_range_hash, player_index) * SIREN_RANGE_CHANCE_SCALING)
-	return base_chance + range_bonus
+	return min(SIREN_MAX_SPAWN_CHANCE, base_chance + range_bonus)
 
 
 func _apply_round_duration_bonus() -> void:

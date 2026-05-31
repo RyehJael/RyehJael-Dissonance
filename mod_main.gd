@@ -28,6 +28,8 @@ func _init():
 		"CHARACTER_INFLUENCER": "Influencer",
 		"EFFECT_INFLUENCER_BAN_HARVESTING": "On item ban: gain {0} {1}",
 		"EFFECT_INFLUENCER_BONUS_BAN": "Every {0} items/weapons bought: gain {1} bonus Ban",
+		"CHARACTER_PRODUCER": "Producer",
+		"EFFECT_PRODUCER_PET_AFFINITY": "While within {0} range of a pet for {1}s: gain {2} of that pet's related stat ({3})",
 		"CHAL_UNLOCK_AEONIAN": "Aeonian",
 		"CHAL_UNLOCK_CONDUCTOR": "Conductor",
 		"CHAL_UNLOCK_INFLUENCER": "Influencer",
@@ -167,6 +169,10 @@ func _register_custom_effects() -> void:
 	var cash_cow_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_effect.gd")
 	if cash_cow_effect != null and not _has_effect_with_id(cash_cow_effect.get_id()):
 		ItemService.effects.push_back(cash_cow_effect)
+
+	var producer_pet_affinity_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/characters/producer/producer_pet_affinity_effect.gd")
+	if producer_pet_affinity_effect != null and not _has_effect_with_id(producer_pet_affinity_effect.get_id()):
+		ItemService.effects.push_back(producer_pet_affinity_effect)
 
 
 func _register_dissonance_challenges() -> void:

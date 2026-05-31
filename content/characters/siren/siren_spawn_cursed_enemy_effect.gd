@@ -1,6 +1,7 @@
 extends "res://items/global/effect.gd"
 
-const RANGE_CHANCE_SCALING = 0.05
+const RANGE_CHANCE_SCALING = 0.04
+const MAX_SPAWN_CHANCE = 75.0
 
 
 static func get_id() -> String:
@@ -53,8 +54,9 @@ func _can_use_player_effects(player_index: int) -> bool:
 
 func _get_spawn_chance(player_index: int) -> float:
 	if not _can_use_player_effects(player_index):
-		return float(value)
-	return float(value) + max(0.0, Utils.get_stat(Keys.stat_range_hash, player_index) * RANGE_CHANCE_SCALING)
+		return min(MAX_SPAWN_CHANCE, float(value))
+	var range_bonus = max(0.0, Utils.get_stat(Keys.stat_range_hash, player_index) * RANGE_CHANCE_SCALING)
+	return min(MAX_SPAWN_CHANCE, float(value) + range_bonus)
 
 
 func _format_chance(chance: float) -> String:
