@@ -1,6 +1,6 @@
 [gd_resource type="Resource" load_steps=8 format=2]
 
-[ext_resource path="res://mods-unpacked/Darkly77-ContentLoader/content_data.gd" type="Script" id=1]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content_data/content_data.gd" type="Script" id=1]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/characters/conductor/conductor_data.tres" type="Resource" id=2]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/1/baton_data.tres" type="Resource" id=3]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/2/baton_2_data.tres" type="Resource" id=4]

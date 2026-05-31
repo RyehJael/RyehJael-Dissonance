@@ -1,6 +1,6 @@
 [gd_resource type="Resource" load_steps=7 format=2]
 
-[ext_resource path="res://mods-unpacked/Darkly77-ContentLoader/content_data.gd" type="Script" id=1]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content_data/content_data.gd" type="Script" id=1]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/weapons/ranged/conch/1/conch_data.tres" type="Resource" id=2]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/weapons/ranged/conch/2/conch_2_data.tres" type="Resource" id=3]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/weapons/ranged/conch/3/conch_3_data.tres" type="Resource" id=4]

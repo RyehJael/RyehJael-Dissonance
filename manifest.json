@@ -4,9 +4,7 @@
 	"version_number": "1.0.0",
 	"description": "Adds new characters, pets, items, weapons, challenges, and gameplay mechanics.",
 	"website_url": "https://github.com/BrotatoMods",
-	"dependencies": [
-		"Darkly77-ContentLoader"
-	],
+	"dependencies": [],
 	"extra": {
 		"godot": {
 			"authors": [

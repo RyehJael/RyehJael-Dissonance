@@ -110,14 +110,132 @@ func _on_dlc_activated(dlc_id: String) -> void:
 
 
 func _load_content_data_safe(content_path: String) -> bool:
-	var content_loader = get_node("/root/ModLoader/Darkly77-ContentLoader/ContentLoader")
 	var content_data = load(content_path)
 	if content_data == null:
 		ModLoaderLog.error("Could not load ContentData: " + content_path, DISSONANCE_LOG)
 		return false
 
-	content_loader.load_data_by_content_data(content_data, DISSONANCE_LOG)
+	_install_content_data(content_data)
 	return true
+
+
+func _install_content_data(content_data) -> void:
+	_add_content_resources(content_data.items, ItemService.items, "my_id")
+	_add_content_resources(content_data.weapons, ItemService.weapons, "my_id")
+	_add_content_resources(content_data.characters, ItemService.characters, "my_id")
+	_add_content_resources(content_data.sets, ItemService.sets, "my_id")
+	_add_content_resources(content_data.upgrades, ItemService.upgrades, "my_id")
+	_add_content_resources(content_data.consumables, ItemService.consumables, "my_id")
+	_add_content_resources(content_data.elites, ItemService.elites, "my_id")
+	_add_content_resources(content_data.difficulties, ItemService.difficulties, "my_id")
+
+	for challenge in content_data.challenges:
+		_register_challenge_resource(challenge)
+
+	_add_debug_resources(content_data.debug_items, DebugService.debug_items)
+	_add_debug_resources(content_data.debug_weapons, DebugService.debug_weapons)
+	_link_weapon_upgrades(content_data.weapons)
+	_apply_content_weapon_characters(content_data.weapons, content_data.weapons_characters)
+	_add_unlocked_by_default_for_content_data(content_data)
+	ItemService.init_unlocked_pool()
+
+
+func _add_content_resources(resources: Array, target: Array, id_property: String) -> void:
+	for resource in resources:
+		if resource == null:
+			continue
+		_generate_resource_hashes(resource)
+		if not _has_resource_with_id(target, id_property, resource.get(id_property)):
+			target.push_back(resource)
+
+
+func _register_challenge_resource(challenge) -> void:
+	if challenge == null:
+		return
+	_generate_resource_hashes(challenge)
+	ChallengeService.hash_to_id[challenge.my_id_hash] = challenge.my_id
+	if not _has_resource_with_id(ChallengeService.challenges, "my_id", challenge.my_id):
+		ChallengeService.challenges.push_back(challenge)
+	ChallengeService._challenge_map.clear()
+
+
+func _add_debug_resources(resources: Array, target: Array) -> void:
+	for resource in resources:
+		if resource == null:
+			continue
+		_generate_resource_hashes(resource)
+		if not _has_resource_with_id(target, "my_id", resource.my_id):
+			target.push_back(resource)
+
+
+func _link_weapon_upgrades(weapons: Array) -> void:
+	for weapon in weapons:
+		if weapon != null and weapon.upgrades_into != null:
+			weapon.upgrades_into.previous_upgrade = weapon
+
+
+func _apply_content_weapon_characters(weapons: Array, weapons_characters: Array) -> void:
+	for weapon_index in weapons_characters.size():
+		if weapon_index >= weapons.size():
+			continue
+		var weapon = weapons[weapon_index]
+		if weapon == null:
+			continue
+		for character in weapons_characters[weapon_index]:
+			if character == null:
+				continue
+			_add_starting_weapon_to_character(character.my_id, weapon)
+
+
+func _add_unlocked_by_default_for_content_data(content_data) -> void:
+	for item in content_data.items:
+		if item != null and item.unlocked_by_default and not ProgressData.items_unlocked.has(item.my_id_hash):
+			ProgressData.items_unlocked.push_back(item.my_id_hash)
+
+	for weapon in content_data.weapons:
+		if weapon != null and weapon.unlocked_by_default and not ProgressData.weapons_unlocked.has(weapon.weapon_id_hash):
+			ProgressData.weapons_unlocked.push_back(weapon.weapon_id_hash)
+
+	for character in content_data.characters:
+		if character == null:
+			continue
+		if character.unlocked_by_default and not ProgressData.characters_unlocked.has(character.my_id_hash):
+			ProgressData.characters_unlocked.push_back(character.my_id_hash)
+		_ensure_character_difficulty_info(character)
+
+	for upgrade in content_data.upgrades:
+		if upgrade != null and upgrade.unlocked_by_default and not ProgressData.upgrades_unlocked.has(upgrade.upgrade_id_hash):
+			ProgressData.upgrades_unlocked.push_back(upgrade.upgrade_id_hash)
+
+	for consumable in content_data.consumables:
+		if consumable != null and consumable.unlocked_by_default and not ProgressData.consumables_unlocked.has(consumable.my_id_hash):
+			ProgressData.consumables_unlocked.push_back(consumable.my_id_hash)
+
+
+func _ensure_character_difficulty_info(character: CharacterData) -> void:
+	var character_diff_info = null
+	var existing_zone_ids := []
+
+	for difficulty_info in ProgressData.difficulties_unlocked:
+		if difficulty_info.character_id != character.my_id:
+			continue
+		character_diff_info = difficulty_info
+		for zone_diff_info in difficulty_info.zones_difficulty_info:
+			existing_zone_ids.push_back(zone_diff_info.zone_id)
+		break
+
+	if character_diff_info == null:
+		character_diff_info = CharacterDifficultyInfo.new(character.my_id)
+		ProgressData.difficulties_unlocked.push_back(character_diff_info)
+
+	for zone in ZoneService.zones:
+		if zone.unlocked_by_default and not existing_zone_ids.has(zone.my_id):
+			character_diff_info.zones_difficulty_info.push_back(ZoneDifficultyInfo.new(zone.my_id))
+
+
+func _generate_resource_hashes(resource) -> void:
+	if resource != null and resource.has_method("_generate_hashes"):
+		resource._generate_hashes()
 
 
 func _add_translations() -> void:
