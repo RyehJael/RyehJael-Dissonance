@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=2 format=2]
+
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/black_notebook/black_notebook_xp_from_cursed_enemy_effect.gd" type="Script" id=1]
+
+[resource]
+script = ExtResource( 1 )
+key = "effect_black_notebook_xp_from_cursed_enemy"
+text_key = "EFFECT_BLACK_NOTEBOOK_XP_FROM_CURSED_ENEMY"
+value = 1
+custom_key = ""
+storage_method = 0
+effect_sign = 3
+custom_args = [  ]
+xp_gain = 1
+curse_chance_scaling = 0.15

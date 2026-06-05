@@ -2,6 +2,27 @@ extends Node
 
 const MOD_DIR = "RyehJael-Dissonance/"
 const DISSONANCE_LOG = "RyehJael-Dissonance"
+const ABYSSAL_TERRORS_DLC_ID = "abyssal_terrors"
+const DLC_1_DATA_PATH = "res://dlcs/dlc_1/dlc_1_data.gd"
+const DLC_LUTE_WEAPON_PATH = "res://dlcs/dlc_1/weapons/melee/lute/1/lute_data.tres"
+const DLC_FLUTE_WEAPON_PATH = "res://dlcs/dlc_1/weapons/ranged/flute/1/flute_data.tres"
+const DLC_HIKING_STICK_WEAPON_PATH = "res://dlcs/dlc_1/weapons/melee/hiking_stick/1/hiking_stick_data.tres"
+const DLC_MUSICAL_SET_PATH = "res://dlcs/dlc_1/sets/musical/musical_set_data.tres"
+const DLC_NAVAL_SET_PATH = "res://dlcs/dlc_1/sets/naval/naval_set_data.tres"
+const DISSONANCE_BATON_WEAPON_PATH = "res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/1/baton_data.tres"
+const DISSONANCE_CONCH_WEAPON_PATH = "res://mods-unpacked/RyehJael-Dissonance/content/weapons/ranged/conch/1/conch_data.tres"
+const DISSONANCE_CONCH_WEAPON_PATHS = [
+	"res://mods-unpacked/RyehJael-Dissonance/content/weapons/ranged/conch/1/conch_data.tres",
+	"res://mods-unpacked/RyehJael-Dissonance/content/weapons/ranged/conch/2/conch_2_data.tres",
+	"res://mods-unpacked/RyehJael-Dissonance/content/weapons/ranged/conch/3/conch_3_data.tres",
+	"res://mods-unpacked/RyehJael-Dissonance/content/weapons/ranged/conch/4/conch_4_data.tres",
+]
+const DISSONANCE_BATON_WEAPON_PATHS = [
+	"res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/1/baton_data.tres",
+	"res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/2/baton_2_data.tres",
+	"res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/3/baton_3_data.tres",
+	"res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/4/baton_4_data.tres",
+]
 
 var dir = ""
 var ext_dir = ""
@@ -51,6 +72,9 @@ func _init():
 		"ITEM_CASH_COW": "Cash Cow",
 		"EFFECT_CASH_COW": "Spawns a Cash Cow that eats and stores materials. At the end of each wave, held materials increase by {0}%. Drops all stored materials when killed.",
 		"MATERIALS_HELD": "Materials held: {0}",
+		"ITEM_BLACK_NOTEBOOK": "Black Notebook",
+		"EFFECT_BLACK_NOTEBOOK_XP_FROM_CURSED_ENEMY": "Cursed enemy kills have a {0}% chance to give {1} XP ({2})",
+		"XP_GAINED": "XP gained: {0}",
 		"CASH_COW_NAME": "Cash Cow",
 		"CASH_COW_BEHAVIOUR_DESCRIPTION": "Moves toward materials and eats them. Enemies can target and kill it. When killed, it drops all held materials and stays dead until the next wave."
 	}
@@ -63,7 +87,8 @@ func _init():
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/run_data.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/player_run_data.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "global/screenshaker.gd")
-	ModLoaderMod.install_script_extension(ext_dir + "dlcs/dlc_1/dlc_1_data.gd")
+	if _resource_exists(DLC_1_DATA_PATH):
+		ModLoaderMod.install_script_extension(ext_dir + "dlcs/dlc_1/dlc_1_data.gd")
 	_add_translations()
 
 
@@ -75,8 +100,10 @@ func _ready()->void:
 	call_deferred("_add_conch_starting_weapons")
 	call_deferred("_normalize_stardust_unlock_state")
 	call_deferred("_normalize_cash_cow_unlock_state")
+	call_deferred("_normalize_black_notebook_unlock_state")
 	call_deferred("_normalize_conch_unlock_state")
-	var _dlc_activated = ProgressData.connect("dlc_activated", self, "_on_dlc_activated")
+	if ProgressData.has_signal("dlc_activated"):
+		var _dlc_activated = ProgressData.connect("dlc_activated", self, "_on_dlc_activated")
 	call_deferred("_load_dlc_content_if_available")
 	ModLoaderLog.info("Ready", DISSONANCE_LOG)
 
@@ -89,7 +116,7 @@ func _load_dissonance_content()->void:
 func _load_dlc_content_if_available() -> void:
 	if dlc_content_loaded:
 		return
-	if not ProgressData.is_dlc_available_and_active("abyssal_terrors"):
+	if not _is_abyssal_terrors_available():
 		return
 
 	if not _load_content_data_safe(dir + "content_data/dissonance_dlc_content.tres"):
@@ -97,6 +124,7 @@ func _load_dlc_content_if_available() -> void:
 	dlc_content_loaded = true
 
 	_install_dlc_content_if_needed()
+	_apply_dlc_weapon_sets()
 	_normalize_baton_unlock_state()
 	ItemService.init_unlocked_pool()
 	_add_dlc_starting_weapons()
@@ -104,7 +132,7 @@ func _load_dlc_content_if_available() -> void:
 
 
 func _on_dlc_activated(dlc_id: String) -> void:
-	if dlc_id != "abyssal_terrors":
+	if dlc_id != ABYSSAL_TERRORS_DLC_ID:
 		return
 	_load_dlc_content_if_available()
 
@@ -291,6 +319,10 @@ func _register_custom_effects() -> void:
 	if cash_cow_effect != null and not _has_effect_with_id(cash_cow_effect.get_id()):
 		ItemService.effects.push_back(cash_cow_effect)
 
+	var black_notebook_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/items/black_notebook/black_notebook_xp_from_cursed_enemy_effect.gd")
+	if black_notebook_effect != null and not _has_effect_with_id(black_notebook_effect.get_id()):
+		ItemService.effects.push_back(black_notebook_effect)
+
 	var producer_pet_affinity_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/characters/producer/producer_pet_affinity_effect.gd")
 	if producer_pet_affinity_effect != null and not _has_effect_with_id(producer_pet_affinity_effect.get_id()):
 		ItemService.effects.push_back(producer_pet_affinity_effect)
@@ -299,6 +331,7 @@ func _register_custom_effects() -> void:
 func _register_dissonance_challenges() -> void:
 	for challenge_path in [
 		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_aeonian.tres",
+		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_poet.tres",
 		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_producer.tres",
 		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_conductor.tres",
 		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_siren.tres",
@@ -355,10 +388,10 @@ func _has_effect_with_id(effect_id: String) -> bool:
 
 func _install_dlc_content_if_needed() -> void:
 	var baton_weapons = [
-		load("res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/1/baton_data.tres"),
-		load("res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/2/baton_2_data.tres"),
-		load("res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/3/baton_3_data.tres"),
-		load("res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/4/baton_4_data.tres")
+		_load_optional_resource(DISSONANCE_BATON_WEAPON_PATHS[0]),
+		_load_optional_resource(DISSONANCE_BATON_WEAPON_PATHS[1]),
+		_load_optional_resource(DISSONANCE_BATON_WEAPON_PATHS[2]),
+		_load_optional_resource(DISSONANCE_BATON_WEAPON_PATHS[3])
 	]
 
 	var previous_weapon = null
@@ -390,34 +423,57 @@ func _has_resource_with_id(resources: Array, id_property: String, id_value: Stri
 
 
 func _add_dlc_starting_weapons() -> void:
-	if not ProgressData.is_dlc_available_and_active("abyssal_terrors"):
+	if not _is_abyssal_terrors_available():
 		return
 
-	var conductor_data = load("res://mods-unpacked/RyehJael-Dissonance/content/characters/conductor/conductor_data.tres")
-	if conductor_data == null:
+	var lute_weapon = _load_optional_resource(DLC_LUTE_WEAPON_PATH)
+	if lute_weapon != null:
+		_add_starting_weapon_to_character("character_conductor", lute_weapon)
+		_add_starting_weapon_to_character("character_siren", lute_weapon)
+		_add_starting_weapon_to_character("character_poet", lute_weapon)
+
+	var flute_weapon = _load_optional_resource(DLC_FLUTE_WEAPON_PATH)
+	if flute_weapon != null:
+		_add_starting_weapon_to_character("character_siren", flute_weapon)
+		_add_starting_weapon_to_character("character_poet", flute_weapon)
+
+	var hiking_stick_weapon = _load_optional_resource(DLC_HIKING_STICK_WEAPON_PATH)
+	if hiking_stick_weapon != null:
+		_add_starting_weapon_to_character("character_siren", hiking_stick_weapon)
+
+	var baton_weapon = _load_optional_resource(DISSONANCE_BATON_WEAPON_PATH)
+	if baton_weapon != null:
+		_add_starting_weapon_to_character("character_conductor", baton_weapon)
+
+
+func _apply_dlc_weapon_sets() -> void:
+	var musical_set = _load_optional_resource(DLC_MUSICAL_SET_PATH)
+	var naval_set = _load_optional_resource(DLC_NAVAL_SET_PATH)
+
+	for weapon_path in DISSONANCE_CONCH_WEAPON_PATHS:
+		var conch_weapon = _load_optional_resource(weapon_path)
+		if conch_weapon == null:
+			continue
+		if musical_set != null:
+			_add_set_to_weapon(conch_weapon, musical_set)
+		if naval_set != null:
+			_add_set_to_weapon(conch_weapon, naval_set)
+
+	if musical_set == null:
 		return
 
-	var lute_weapon = load("res://dlcs/dlc_1/weapons/melee/lute/1/lute_data.tres")
-	if lute_weapon == null:
-		return
+	for weapon_path in DISSONANCE_BATON_WEAPON_PATHS:
+		var baton_weapon = _load_optional_resource(weapon_path)
+		if baton_weapon != null:
+			_add_set_to_weapon(baton_weapon, musical_set)
 
-	var has_lute = false
-	for weapon in conductor_data.starting_weapons:
-		if weapon != null and weapon.my_id == lute_weapon.my_id:
-			has_lute = true
-			break
-	if not has_lute:
-		conductor_data.starting_weapons.push_back(lute_weapon)
 
-	var baton_weapon = load("res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/1/baton_data.tres")
-	if baton_weapon == null:
-		return
-
-	for weapon in conductor_data.starting_weapons:
-		if weapon != null and weapon.my_id == baton_weapon.my_id:
+func _add_set_to_weapon(weapon: WeaponData, set_data: Resource) -> void:
+	_generate_resource_hashes(set_data)
+	for existing_set in weapon.sets:
+		if existing_set != null and existing_set.get("my_id") == set_data.get("my_id"):
 			return
-
-	conductor_data.starting_weapons.push_back(baton_weapon)
+	weapon.sets.push_back(set_data)
 
 
 func _add_conch_starting_weapons() -> void:
@@ -456,7 +512,7 @@ func _get_character_by_id(character_id: String) -> CharacterData:
 
 
 func _normalize_baton_unlock_state() -> void:
-	if not ProgressData.is_dlc_available_and_active("abyssal_terrors"):
+	if not _is_abyssal_terrors_available():
 		return
 
 	var baton_weapon_id = "weapon_baton"
@@ -529,6 +585,30 @@ func _normalize_cash_cow_unlock_state() -> void:
 		ItemService.init_unlocked_pool()
 
 
+func _normalize_black_notebook_unlock_state() -> void:
+	var black_notebook_item_id = "item_black_notebook"
+	var black_notebook_item_hash = Keys.generate_hash(black_notebook_item_id)
+
+	if ProgressData.items_unlocked.has(black_notebook_item_id):
+		ProgressData.items_unlocked.erase(black_notebook_item_id)
+		if not ProgressData.items_unlocked.has(black_notebook_item_hash):
+			ProgressData.items_unlocked.push_back(black_notebook_item_hash)
+
+	var poet_challenge_hash = Keys.generate_hash("chal_poet")
+	var should_unlock_from_challenge = ProgressData.is_unlock_all_save() or ChallengeService.is_challenge_completed(poet_challenge_hash)
+	var should_unlock_from_poet_clear = false
+	var poet_hash = Keys.generate_hash("character_poet")
+	for zone_id in [0, 1]:
+		var diff_info = ProgressData.get_character_difficulty_info(poet_hash, zone_id)
+		if diff_info != null and diff_info.max_difficulty_beaten.difficulty_value >= 0:
+			should_unlock_from_poet_clear = true
+			break
+
+	if (should_unlock_from_challenge or should_unlock_from_poet_clear) and not ProgressData.items_unlocked.has(black_notebook_item_hash):
+		ProgressData.items_unlocked.push_back(black_notebook_item_hash)
+		ItemService.init_unlocked_pool()
+
+
 func _normalize_conch_unlock_state() -> void:
 	var conch_weapon_id = "weapon_conch"
 	var conch_weapon_hash = Keys.generate_hash(conch_weapon_id)
@@ -551,3 +631,21 @@ func _normalize_conch_unlock_state() -> void:
 	if (should_unlock_from_challenge or should_unlock_from_siren_clear) and not ProgressData.weapons_unlocked.has(conch_weapon_hash):
 		ProgressData.weapons_unlocked.push_back(conch_weapon_hash)
 		ItemService.init_unlocked_pool()
+
+
+func _is_abyssal_terrors_available() -> bool:
+	return (
+		_resource_exists(DLC_1_DATA_PATH)
+		and ProgressData.has_method("is_dlc_available_and_active")
+		and ProgressData.is_dlc_available_and_active(ABYSSAL_TERRORS_DLC_ID)
+	)
+
+
+func _load_optional_resource(path: String):
+	if not _resource_exists(path):
+		return null
+	return load(path)
+
+
+func _resource_exists(path: String) -> bool:
+	return ResourceLoader.exists(path)

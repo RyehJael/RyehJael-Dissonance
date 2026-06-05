@@ -14,10 +14,12 @@ const AEONIAN_EXTRA_TIME_COLOR = Color.deepskyblue
 const CASH_COW_PICKUP_PLAYER_INDEX = -7777
 const PRODUCER_PET_INDICATOR_SCRIPT = preload("res://mods-unpacked/RyehJael-Dissonance/content/characters/producer/producer_pet_indicator.gd")
 const PRODUCER_PET_INDICATOR_NODE_NAME = "DissonanceProducerPetIndicator"
-const PRODUCER_PET_AFFINITY_RANGE_SCALING := 1.0
+const PRODUCER_PET_AFFINITY_RANGE_SCALING := 0.5
 
 var _siren_spawn_cursed_enemy_hash = Keys.generate_hash("effect_siren_spawn_cursed_enemy")
 var _siren_bonus_materials_hash = Keys.generate_hash("effect_siren_bonus_materials_from_cursed_enemies")
+var _black_notebook_xp_from_cursed_enemy_hash = Keys.generate_hash("effect_black_notebook_xp_from_cursed_enemy")
+var _black_notebook_item_hash = Keys.generate_hash("item_black_notebook")
 var _siren_character_hash = Keys.generate_hash("character_siren")
 var _influencer_ban_harvesting_hash = Keys.generate_hash("effect_influencer_harvesting_on_ban")
 var _influencer_character_hash = Keys.generate_hash("character_influencer")
@@ -38,7 +40,8 @@ var _producer_affinity_indicators := {}
 
 func _ready() -> void:
 	_dissonance_cursed_enemy_kills_this_wave = [0, 0, 0, 0]
-	_siren_curse_enemy_effect_behavior_data = load(CURSE_ENEMY_EFFECT_BEHAVIOR_PATH)
+	if _resource_exists(CURSE_ENEMY_EFFECT_BEHAVIOR_PATH):
+		_siren_curse_enemy_effect_behavior_data = load(CURSE_ENEMY_EFFECT_BEHAVIOR_PATH)
 	_try_complete_aeonian_unlock_challenge()
 	call_deferred("_apply_round_duration_bonus")
 
@@ -51,6 +54,7 @@ func _physics_process(delta: float) -> void:
 func _on_enemy_died(enemy: Enemy, args: Entity.DieArgs) -> void:
 	._on_enemy_died(enemy, args)
 	_try_count_dissonance_cursed_enemy_kill(enemy, args)
+	_try_gain_black_notebook_xp(enemy, args)
 	_try_spawn_siren_cursed_enemy(enemy, args)
 
 
@@ -86,6 +90,8 @@ func _on_EntitySpawner_enemy_respawned(enemy: Enemy) -> void:
 func _try_spawn_siren_cursed_enemy(enemy: Enemy, args: Entity.DieArgs) -> void:
 	if _cleaning_up or not args.enemy_killed_by_player:
 		return
+	if _siren_curse_enemy_effect_behavior_data == null:
+		return
 	if enemy == null or not is_instance_valid(enemy) or enemy is Boss or enemy.is_loot or not enemy.can_be_cursed:
 		return
 
@@ -106,6 +112,8 @@ func _try_spawn_siren_cursed_enemy(enemy: Enemy, args: Entity.DieArgs) -> void:
 
 func request_dissonance_cursed_enemy_spawn(enemy: Enemy, player_index: int) -> void:
 	if _cleaning_up:
+		return
+	if _siren_curse_enemy_effect_behavior_data == null:
 		return
 	if enemy == null or not is_instance_valid(enemy) or enemy is Boss or enemy.is_loot or not enemy.can_be_cursed:
 		return
@@ -227,6 +235,37 @@ func _try_count_dissonance_cursed_enemy_kill(enemy: Enemy, args: Entity.DieArgs)
 	_ensure_dissonance_cursed_enemy_kill_slot(player_index)
 	_dissonance_cursed_enemy_kills_this_wave[player_index] += 1
 	ChallengeService.try_complete_challenge(_chal_unlock_siren_hash, _dissonance_cursed_enemy_kills_this_wave[player_index])
+
+
+func _try_gain_black_notebook_xp(enemy: Enemy, args: Entity.DieArgs) -> void:
+	if _cleaning_up or not args.enemy_killed_by_player:
+		return
+	if enemy == null or not is_instance_valid(enemy) or not _is_cursed_enemy(enemy):
+		return
+
+	var player_index = args.killed_by_player_index
+	if player_index < 0 or player_index >= RunData.get_player_count():
+		return
+
+	var effect_data = RunData.get_player_effect(_black_notebook_xp_from_cursed_enemy_hash, player_index)
+	if not (effect_data is Dictionary):
+		return
+
+	var base_chance = max(0.0, float(effect_data.get("base_chance", 0.0)))
+	var curse_chance_scaling = max(0.0, float(effect_data.get("curse_chance_scaling", 0.0)))
+	var xp_gain = max(0, int(effect_data.get("xp_gain", 0)))
+	if base_chance <= 0.0 or xp_gain <= 0:
+		return
+
+	var curse = max(0.0, Utils.get_stat(Keys.stat_curse_hash, player_index))
+	var chance = max(0.0, base_chance + curse * curse_chance_scaling) / 100.0
+	if not Utils.get_chance_success(chance):
+		return
+
+	RunData.add_xp(xp_gain, player_index)
+	if player_index >= 0 and player_index < RunData.tracked_item_effects.size() and not RunData.tracked_item_effects[player_index].has(_black_notebook_item_hash):
+		RunData.tracked_item_effects[player_index][_black_notebook_item_hash] = 0
+	RunData.add_tracked_value(player_index, _black_notebook_item_hash, xp_gain)
 
 
 func _ensure_dissonance_cursed_enemy_kill_slot(player_index: int) -> void:
@@ -622,3 +661,7 @@ func _is_cursed_enemy(unit: Unit) -> bool:
 			return true
 
 	return false
+
+
+func _resource_exists(path: String) -> bool:
+	return ResourceLoader.exists(path)

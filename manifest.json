@@ -1,10 +1,12 @@
 {
 	"name": "Dissonance",
 	"namespace": "RyehJael",
-	"version_number": "1.0.0",
+	"version_number": "1.0.1",
 	"description": "Adds new characters, pets, items, weapons, challenges, and gameplay mechanics.",
 	"website_url": "https://github.com/BrotatoMods",
-	"dependencies": [],
+	"dependencies": [
+
+	],
 	"extra": {
 		"godot": {
 			"authors": [
