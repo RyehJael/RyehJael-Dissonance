@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=2]
+[gd_scene load_steps=13 format=2]
 
 [ext_resource path="res://entities/units/pet/scapegoat/scapegoat.tscn" type="PackedScene" id=1]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow.gd" type="Script" id=2]
@@ -6,12 +6,10 @@
 [ext_resource path="res://entities/units/movement_behaviors/follow_target_movement_behavior.gd" type="Script" id=4]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_target_behavior.gd" type="Script" id=5]
 [ext_resource path="res://entities/units/player/item_attract_area.gd" type="Script" id=6]
-[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_shadow.png" type="Texture" id=7]
-[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_body.png" type="Texture" id=8]
-[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_head_1.png" type="Texture" id=9]
-[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_head_0.png" type="Texture" id=10]
-[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_ear_l.png" type="Texture" id=11]
-[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_ear_r.png" type="Texture" id=12]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_shadow.png" type="Texture" id=21]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_body.png" type="Texture" id=22]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_head_1.png" type="Texture" id=23]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_head_0.png" type="Texture" id=24]
 
 [sub_resource type="CircleShape2D" id=1]
 
@@ -23,19 +21,19 @@ stats = ExtResource( 3 )
 can_be_targeted_by_enemies = true
 
 [node name="sp_shadow" parent="Animation/Viewport/offset" index="0"]
-texture = ExtResource( 7 )
+texture = ExtResource( 21 )
 
 [node name="sp_body" parent="Animation/Viewport/offset" index="1"]
-texture = ExtResource( 8 )
+texture = ExtResource( 22 )
 
 [node name="sp_head" parent="Animation/Viewport/offset/sp_body" index="0"]
-texture = ExtResource( 9 )
+texture = ExtResource( 23 )
 
 [node name="sp_ear_l" parent="Animation/Viewport/offset/sp_body/sp_head" index="0"]
-texture = ExtResource( 11 )
+visible = false
 
 [node name="sp_ear_r" parent="Animation/Viewport/offset/sp_body/sp_head" index="1"]
-texture = ExtResource( 12 )
+visible = false
 
 [node name="MovementBehavior" parent="." index="5"]
 script = ExtResource( 4 )
