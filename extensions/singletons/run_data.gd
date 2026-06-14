@@ -10,6 +10,19 @@ var black_notebook_item_hash = Keys.generate_hash("item_black_notebook")
 var chal_unlock_conductor_hash = Keys.generate_hash("chal_unlock_conductor")
 var chal_unlock_poet_hash = Keys.generate_hash("chal_unlock_poet")
 var chal_unlock_producer_hash = Keys.generate_hash("chal_unlock_producer")
+const DISSONANCE_CHARACTER_IDS = [
+	"character_aeonian",
+	"character_conductor",
+	"character_influencer",
+	"character_poet",
+	"character_producer",
+	"character_siren",
+]
+
+
+func apply_run_won() -> void:
+	_ensure_current_dissonance_character_difficulty_records()
+	.apply_run_won()
 
 
 func init_tracked_effects() -> Dictionary:
@@ -226,3 +239,37 @@ func apply_primary_stat_shift(player_index: int, highest_delta: int, lowest_delt
 
 func is_stat_gain_disabled(player_index: int, stat_hash: int) -> bool:
 	return RunData.get_stat_gain(stat_hash, player_index) <= 0.0
+
+
+func _ensure_current_dissonance_character_difficulty_records() -> void:
+	for player_index in get_player_count():
+		var character = get_player_character(player_index)
+		if character == null or not DISSONANCE_CHARACTER_IDS.has(character.my_id):
+			continue
+		_ensure_dissonance_character_zone_difficulty_info(character.my_id, current_zone)
+
+
+func _ensure_dissonance_character_zone_difficulty_info(character_id: String, zone_id: int) -> void:
+	var character_diff_info = _get_or_create_dissonance_character_difficulty_info(character_id)
+
+	for zone_diff_info in character_diff_info.zones_difficulty_info:
+		if zone_diff_info.zone_id == zone_id:
+			return
+
+	character_diff_info.zones_difficulty_info.push_back(ZoneDifficultyInfo.new(zone_id))
+
+
+func _get_or_create_dissonance_character_difficulty_info(character_id: String):
+	var character_hash = Keys.generate_hash(character_id)
+
+	for difficulty_info in ProgressData.difficulties_unlocked:
+		if difficulty_info == null:
+			continue
+		if difficulty_info.character_id == character_id or difficulty_info.character_id_hash == character_hash:
+			difficulty_info.character_id = character_id
+			difficulty_info.character_id_hash = character_hash
+			return difficulty_info
+
+	var character_diff_info = CharacterDifficultyInfo.new(character_id)
+	ProgressData.difficulties_unlocked.push_back(character_diff_info)
+	return character_diff_info

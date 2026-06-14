@@ -23,6 +23,14 @@ const DISSONANCE_BATON_WEAPON_PATHS = [
 	"res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/3/baton_3_data.tres",
 	"res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/4/baton_4_data.tres",
 ]
+const DISSONANCE_CHARACTER_IDS = [
+	"character_aeonian",
+	"character_conductor",
+	"character_influencer",
+	"character_poet",
+	"character_producer",
+	"character_siren",
+]
 
 var dir = ""
 var ext_dir = ""
@@ -70,13 +78,13 @@ func _init():
 		"WEAPON_BATON": "Baton",
 		"EFFECT_BATON_STAT_SHIFT": "Every {0} enemies killed by this weapon in a wave: {1} from your highest stat, {2} to your lowest stat",
 		"ITEM_CASH_COW": "Cash Cow",
-		"EFFECT_CASH_COW": "Spawns a Cash Cow that eats and stores materials. At the end of each wave, held materials increase by {0}%. Drops all stored materials when killed.",
+		"EFFECT_CASH_COW": "Spawns a Cash Cow that eats and stores materials. At the end of each wave, held materials increase by {0}%. While you are nearby, it cannot move and heals at {1}% of your HP Regeneration rate. Drops all stored materials when killed.",
 		"MATERIALS_HELD": "Materials held: {0}",
 		"ITEM_BLACK_NOTEBOOK": "Black Notebook",
 		"EFFECT_BLACK_NOTEBOOK_XP_FROM_CURSED_ENEMY": "Cursed enemy kills have a {0}% chance to give {1} XP ({2})",
 		"XP_GAINED": "XP gained: {0}",
 		"CASH_COW_NAME": "Cash Cow",
-		"CASH_COW_BEHAVIOUR_DESCRIPTION": "Moves toward materials and eats them. Enemies can target and kill it. When killed, it drops all held materials and stays dead until the next wave."
+		"CASH_COW_BEHAVIOUR_DESCRIPTION": "Moves toward materials and eats them. While you are nearby, it cannot move and heals from half your HP Regeneration rate. Enemies can target and kill it. When killed, it drops all held materials and stays dead until the next wave."
 	}
 
 	ModLoaderMod.install_script_extension(ext_dir + "main.gd")
@@ -96,6 +104,7 @@ func _ready()->void:
 	_register_custom_effects()
 	_load_dissonance_content()
 	call_deferred("_register_dissonance_challenges")
+	call_deferred("_normalize_dissonance_character_difficulty_states")
 	call_deferred("_normalize_dissonance_character_unlock_states")
 	call_deferred("_add_conch_starting_weapons")
 	call_deferred("_normalize_stardust_unlock_state")
@@ -241,24 +250,73 @@ func _add_unlocked_by_default_for_content_data(content_data) -> void:
 
 
 func _ensure_character_difficulty_info(character: CharacterData) -> void:
-	var character_diff_info = null
+	if character == null:
+		return
+	_ensure_character_difficulty_info_for_id(character.my_id)
+
+
+func _normalize_dissonance_character_difficulty_states() -> void:
+	for character_id in DISSONANCE_CHARACTER_IDS:
+		_ensure_character_difficulty_info_for_id(character_id)
+
+	ProgressData.set_max_selectable_difficulty()
+
+
+func _ensure_character_difficulty_info_for_id(character_id: String) -> void:
+	var character_diff_info = _get_or_create_character_difficulty_info(character_id)
 	var existing_zone_ids := []
 
-	for difficulty_info in ProgressData.difficulties_unlocked:
-		if difficulty_info.character_id != character.my_id:
-			continue
-		character_diff_info = difficulty_info
-		for zone_diff_info in difficulty_info.zones_difficulty_info:
-			existing_zone_ids.push_back(zone_diff_info.zone_id)
-		break
-
-	if character_diff_info == null:
-		character_diff_info = CharacterDifficultyInfo.new(character.my_id)
-		ProgressData.difficulties_unlocked.push_back(character_diff_info)
+	for zone_diff_info in character_diff_info.zones_difficulty_info:
+		existing_zone_ids.push_back(zone_diff_info.zone_id)
 
 	for zone in ZoneService.zones:
 		if zone.unlocked_by_default and not existing_zone_ids.has(zone.my_id):
 			character_diff_info.zones_difficulty_info.push_back(ZoneDifficultyInfo.new(zone.my_id))
+
+
+func _get_or_create_character_difficulty_info(character_id: String):
+	var character_hash = Keys.generate_hash(character_id)
+	var character_diff_info = null
+	var duplicate_infos := []
+
+	for difficulty_info in ProgressData.difficulties_unlocked:
+		if difficulty_info == null:
+			continue
+		if difficulty_info.character_id != character_id and difficulty_info.character_id_hash != character_hash:
+			continue
+		if character_diff_info == null:
+			character_diff_info = difficulty_info
+		else:
+			duplicate_infos.push_back(difficulty_info)
+
+	if character_diff_info == null:
+		character_diff_info = CharacterDifficultyInfo.new(character_id)
+		ProgressData.difficulties_unlocked.push_back(character_diff_info)
+	else:
+		character_diff_info.character_id = character_id
+		character_diff_info.character_id_hash = character_hash
+
+	for duplicate_info in duplicate_infos:
+		_merge_character_difficulty_info(character_diff_info, duplicate_info)
+		ProgressData.difficulties_unlocked.erase(duplicate_info)
+
+	return character_diff_info
+
+
+func _merge_character_difficulty_info(target_info, source_info) -> void:
+	for source_zone_info in source_info.zones_difficulty_info:
+		var target_zone_info = _get_zone_difficulty_info(target_info, source_zone_info.zone_id)
+		if target_zone_info == null:
+			target_info.zones_difficulty_info.push_back(source_zone_info)
+		else:
+			target_zone_info.deserialize_and_merge_take_max(source_zone_info.serialize())
+
+
+func _get_zone_difficulty_info(character_diff_info, zone_id: int):
+	for zone_diff_info in character_diff_info.zones_difficulty_info:
+		if zone_diff_info.zone_id == zone_id:
+			return zone_diff_info
+	return null
 
 
 func _generate_resource_hashes(resource) -> void:
@@ -353,14 +411,7 @@ func _register_dissonance_challenges() -> void:
 
 
 func _normalize_dissonance_character_unlock_states() -> void:
-	for character_id in [
-		"character_aeonian",
-		"character_conductor",
-		"character_influencer",
-		"character_poet",
-		"character_producer",
-		"character_siren"
-	]:
+	for character_id in DISSONANCE_CHARACTER_IDS:
 		var challenge_id = "chal_unlock_" + character_id.replace("character_", "")
 		_normalize_dissonance_character_unlock(character_id, challenge_id)
 

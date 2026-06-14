@@ -1,11 +1,7 @@
 extends "res://main.gd"
 
-const CURSE_ENEMY_EFFECT_BEHAVIOR_PATH = "res://dlcs/dlc_1/effect_behaviors/enemy/curse_enemy_effect_behavior_data.tres"
+const CURSE_SCENE_EFFECT_BEHAVIOR_PATH = "res://dlcs/dlc_1/effect_behaviors/scene/curse_scene_effect_behavior_data.tres"
 const CURSE_ENEMY_EFFECT_SCRIPT_PATH = "res://dlcs/dlc_1/effect_behaviors/enemy/curse_enemy_effect_behavior.gd"
-const SIREN_CURSE_HP_BOOST = 150
-const SIREN_CURSE_DAMAGE_BOOST = 25
-const SIREN_CURSE_SPEED_BOOST = 15
-const SIREN_MAX_CURSE_HP_BOOST = 300
 const SIREN_RANGE_CHANCE_SCALING = 0.04
 const SIREN_MAX_SPAWN_CHANCE = 75.0
 const SIREN_MIN_SPAWN_DIST_FROM_PLAYER = 300
@@ -30,7 +26,7 @@ var _producer_character_hash = Keys.generate_hash("character_producer")
 var _chal_unlock_aeonian_hash = Keys.generate_hash("chal_unlock_aeonian")
 var _chal_unlock_influencer_hash = Keys.generate_hash("chal_unlock_influencer")
 var _chal_unlock_siren_hash = Keys.generate_hash("chal_unlock_siren")
-var _siren_curse_enemy_effect_behavior_data: Resource = null
+var _siren_curse_scene_effect_behavior_data: Resource = null
 var _pending_siren_spawn_sources := {}
 var _aeonian_round_duration_bonus = 0
 var _dissonance_cursed_enemy_kills_this_wave := [0, 0, 0, 0]
@@ -40,8 +36,8 @@ var _producer_affinity_indicators := {}
 
 func _ready() -> void:
 	_dissonance_cursed_enemy_kills_this_wave = [0, 0, 0, 0]
-	if _resource_exists(CURSE_ENEMY_EFFECT_BEHAVIOR_PATH):
-		_siren_curse_enemy_effect_behavior_data = load(CURSE_ENEMY_EFFECT_BEHAVIOR_PATH)
+	if _resource_exists(CURSE_SCENE_EFFECT_BEHAVIOR_PATH):
+		_siren_curse_scene_effect_behavior_data = load(CURSE_SCENE_EFFECT_BEHAVIOR_PATH)
 	_try_complete_aeonian_unlock_challenge()
 	call_deferred("_apply_round_duration_bonus")
 
@@ -90,7 +86,7 @@ func _on_EntitySpawner_enemy_respawned(enemy: Enemy) -> void:
 func _try_spawn_siren_cursed_enemy(enemy: Enemy, args: Entity.DieArgs) -> void:
 	if _cleaning_up or not args.enemy_killed_by_player:
 		return
-	if _siren_curse_enemy_effect_behavior_data == null:
+	if _siren_curse_scene_effect_behavior_data == null:
 		return
 	if enemy == null or not is_instance_valid(enemy) or enemy is Boss or enemy.is_loot or not enemy.can_be_cursed:
 		return
@@ -113,7 +109,7 @@ func _try_spawn_siren_cursed_enemy(enemy: Enemy, args: Entity.DieArgs) -> void:
 func request_dissonance_cursed_enemy_spawn(enemy: Enemy, player_index: int) -> void:
 	if _cleaning_up:
 		return
-	if _siren_curse_enemy_effect_behavior_data == null:
+	if _siren_curse_scene_effect_behavior_data == null:
 		return
 	if enemy == null or not is_instance_valid(enemy) or enemy is Boss or enemy.is_loot or not enemy.can_be_cursed:
 		return
@@ -166,7 +162,7 @@ func _try_curse_pending_siren_spawn(enemy: Enemy) -> void:
 
 
 func _curse_siren_spawned_enemy(enemy: Enemy, player_index: int) -> bool:
-	if _siren_curse_enemy_effect_behavior_data == null or _siren_curse_enemy_effect_behavior_data.scene == null:
+	if _siren_curse_scene_effect_behavior_data == null or _siren_curse_scene_effect_behavior_data.scene == null:
 		return false
 	if _is_cursed_enemy(enemy):
 		return false
@@ -174,27 +170,21 @@ func _curse_siren_spawned_enemy(enemy: Enemy, player_index: int) -> bool:
 	enemy.can_be_cursed = false
 	enemy.call_deferred("set", "can_be_cursed", true)
 
-	var enemy_being_cursed_effect_behavior = _siren_curse_enemy_effect_behavior_data.scene.instance()
-	enemy.effect_behaviors.add_child(enemy_being_cursed_effect_behavior.init(enemy))
-
+	var curse_scene_effect_behavior = _siren_curse_scene_effect_behavior_data.scene.instance()
+	if curse_scene_effect_behavior == null or not curse_scene_effect_behavior.has_method("_curse_enemy"):
+		if curse_scene_effect_behavior != null:
+			curse_scene_effect_behavior.free()
+		return false
 	var curse_value = _get_siren_spawned_enemy_curse_value(player_index)
-	var boost_args := BoostArgs.new()
-	boost_args.hp_boost = SIREN_CURSE_HP_BOOST + min(curse_value, SIREN_MAX_CURSE_HP_BOOST) * 2
-	boost_args.damage_boost = SIREN_CURSE_DAMAGE_BOOST
-	boost_args.speed_boost = SIREN_CURSE_SPEED_BOOST
-	boost_args.show_outline = false
-	enemy.boost(boost_args)
-	enemy.can_be_boosted = false
+	curse_scene_effect_behavior._curse_enemy(enemy, curse_value)
+	curse_scene_effect_behavior.free()
 	return true
 
 
-func _get_siren_spawned_enemy_curse_value(player_index: int) -> int:
+func _get_siren_spawned_enemy_curse_value(player_index: int) -> float:
 	if not _is_valid_siren_player_index(player_index):
-		return 1
-	var player_curse := int(Utils.get_stat(Keys.stat_curse_hash, player_index))
-	if player_curse <= 0:
-		return 1
-	return player_curse
+		return 0.0
+	return max(0.0, Utils.get_stat(Keys.stat_curse_hash, player_index))
 
 
 func _add_siren_spawn_tracked_value(player_index: int) -> void:

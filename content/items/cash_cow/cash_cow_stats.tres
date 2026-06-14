@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource( 1 )
-health = 30
+health = 15
 health_increase_each_wave = 0.0
 speed = 180
 speed_randomization = 0

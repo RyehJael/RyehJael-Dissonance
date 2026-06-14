@@ -12,9 +12,16 @@ export(AudioStream) var sound_rising
 export(AudioStream) var sound_pet
 
 var growth_percent := 15
+var heal_regen_ratio := 0.5
+var healing_range := 150.0
 var held_materials := 0
 var _effect = null
 var _invulnerable_cooldown := 0.0
+var _healing_players := []
+var _healing_timer := FixedTimer.new()
+var _healing_movement_locked := false
+var _can_move_before_healing := true
+var _mode_before_healing := RigidBody2D.MODE_CHARACTER
 
 onready var life_bar = $"%LifeBar" as UIProgressBar
 
@@ -31,9 +38,12 @@ func update_data(effect: PetEffect) -> void:
 	.update_data(effect)
 	_effect = effect
 	growth_percent = int(effect.get("growth_percent"))
+	heal_regen_ratio = float(effect.get("heal_regen_ratio"))
+	healing_range = float(effect.get("healing_range"))
 	held_materials = int(effect.get("held_materials"))
 	max_stats.health = int(ceil(max_stats.health * float(effect.get("health_boost"))))
 	current_stats.health = max_stats.health
+	_update_healing_range()
 	_sync_tracking()
 	emit_signal("health_updated", self, current_stats.health, max_stats.health)
 
@@ -54,6 +64,7 @@ func _physics_process(delta: float) -> void:
 	if _end_of_wave or dead:
 		return
 
+	_process_healing(delta)
 	._physics_process(delta)
 
 	if _invulnerable_cooldown > 0:
@@ -107,6 +118,9 @@ func _on_Hurtbox_area_entered(hitbox: Area2D) -> void:
 
 func die(args := Entity.DieArgs.new()) -> void:
 	_can_move = false
+	_healing_timer.stop()
+	_healing_players.clear()
+	_healing_movement_locked = false
 
 	if args.cleaning_up:
 		_end_of_wave = true
@@ -128,6 +142,9 @@ func end_of_wave_callback() -> void:
 	if not dead and held_materials > 0:
 		var bonus = int(ceil(held_materials * (growth_percent / 100.0)))
 		_set_held_materials(held_materials + bonus)
+	if _healing_movement_locked:
+		_set_healing_movement_locked(false)
+	_healing_timer.stop()
 	.end_of_wave_callback()
 
 
@@ -180,12 +197,122 @@ func _set_cash_cow_head_texture(texture: Texture) -> void:
 		head.texture = texture
 
 
-func _on_HealingTriggeringZone_body_entered(_body) -> void:
-	pass
+func _process_healing(delta: float) -> void:
+	var healing_player = _get_healing_player()
+	_set_healing_movement_locked(healing_player != null)
+
+	if healing_player == null or current_stats.health >= max_stats.health:
+		_healing_timer.stop()
+		return
+
+	var heal_value = _get_player_health_regen_value(healing_player)
+	var heal_interval = _get_player_health_regen_interval(healing_player)
+	if heal_value <= 0 or heal_interval <= 0.0:
+		_healing_timer.stop()
+		return
+
+	_healing_timer.wait_time = heal_interval
+	if _healing_timer.is_stopped():
+		_healing_timer.start()
+
+	var loop_count = _healing_timer.try_loop(delta)
+	if loop_count > 0:
+		var _healed = _heal_cash_cow(heal_value * loop_count)
 
 
-func _on_HealingTriggeringZone_body_exited(_body) -> void:
-	pass
+func _get_healing_player() -> Player:
+	for player in _healing_players:
+		if is_instance_valid(player):
+			return player
+	return null
+
+
+func _get_player_health_regen_interval(player: Player) -> float:
+	if heal_regen_ratio <= 0.0 or RunData.get_player_effect_bool(Keys.no_heal_hash, player.player_index):
+		return -1.0
+
+	if RunData.get_player_effect(Keys.torture_hash, player.player_index) > 0:
+		return 1.0 / heal_regen_ratio
+
+	var stat_hp_regeneration = Utils.get_stat(Keys.stat_hp_regeneration_hash, player.player_index)
+	if stat_hp_regeneration <= 0:
+		return -1.0
+
+	return RunData.get_hp_regeneration_timer(int(stat_hp_regeneration)) / heal_regen_ratio
+
+
+func _get_player_health_regen_value(player: Player) -> int:
+	if RunData.get_player_effect_bool(Keys.no_heal_hash, player.player_index):
+		return 0
+
+	var torture_effect = RunData.get_player_effect(Keys.torture_hash, player.player_index)
+	if torture_effect > 0:
+		return torture_effect
+
+	var hp_regen_val = 1
+	var bonus_hp_regen_effects = RunData.get_player_effect(Keys.hp_regen_bonus_hash, player.player_index)
+	if bonus_hp_regen_effects.size() > 0:
+		var multiplier = 0
+		for effect in bonus_hp_regen_effects:
+			if player.current_stats.health < player.max_stats.health * (effect[1] / 100.0):
+				multiplier += effect[0]
+		hp_regen_val = int(hp_regen_val * (1.0 + multiplier))
+
+	return max(0, hp_regen_val)
+
+
+func _heal_cash_cow(value: int) -> int:
+	var actual_value = min(value, max_stats.health - current_stats.health)
+	if actual_value <= 0:
+		return 0
+
+	current_stats.health += actual_value
+	emit_signal("health_updated", self, current_stats.health, max_stats.health)
+	return actual_value
+
+
+func _set_healing_movement_locked(value: bool) -> void:
+	if _healing_movement_locked == value:
+		return
+
+	_healing_movement_locked = value
+	if value:
+		_can_move_before_healing = _can_move
+		_mode_before_healing = mode
+		_can_move = false
+		mode = RigidBody2D.MODE_STATIC
+	else:
+		_can_move = _can_move_before_healing
+		mode = _mode_before_healing
+		if _can_move and not dead and not _end_of_wave:
+			_animation_player.play("move")
+
+
+func _update_healing_range() -> void:
+	var healing_shape = get_node_or_null("HealingTriggeringZone/CollisionShape2D") as CollisionShape2D
+	if healing_shape == null or not healing_shape.shape is CircleShape2D:
+		return
+
+	var circle_shape = healing_shape.shape as CircleShape2D
+	circle_shape.radius = healing_range
+
+
+func _on_HealingTriggeringZone_body_entered(body) -> void:
+	if not body is Player:
+		return
+
+	var player = body as Player
+	if player.player_index != player_index or _healing_players.has(player):
+		return
+
+	_healing_players.push_back(player)
+
+
+func _on_HealingTriggeringZone_body_exited(body) -> void:
+	if not body is Player:
+		return
+
+	_healing_players.erase(body)
 
 
 func _can_pet() -> void:

@@ -16,3 +16,5 @@ scene = ExtResource( 1 )
 is_structure = false
 growth_percent = 15
 health_boost = 1.0
+heal_regen_ratio = 0.5
+healing_range = 150.0
