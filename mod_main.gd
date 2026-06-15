@@ -23,6 +23,7 @@ const DISSONANCE_BATON_WEAPON_PATHS = [
 	"res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/3/baton_3_data.tres",
 	"res://mods-unpacked/RyehJael-Dissonance/content/weapons/melee/baton/4/baton_4_data.tres",
 ]
+const DissonanceDifficultyRecords = preload("res://mods-unpacked/RyehJael-Dissonance/extensions/dissonance_difficulty_records.gd")
 const DISSONANCE_CHARACTER_IDS = [
 	"character_aeonian",
 	"character_conductor",
@@ -108,6 +109,7 @@ func _init():
 func _ready()->void:
 	_register_custom_effects()
 	_load_dissonance_content()
+	DissonanceDifficultyRecords.restore_records()
 	call_deferred("_register_dissonance_challenges")
 	call_deferred("_normalize_dissonance_character_difficulty_states")
 	call_deferred("_normalize_dissonance_character_unlock_states")
@@ -258,14 +260,11 @@ func _add_unlocked_by_default_for_content_data(content_data) -> void:
 func _ensure_character_difficulty_info(character: CharacterData) -> void:
 	if character == null:
 		return
-	_ensure_character_difficulty_info_for_id(character.my_id)
+	DissonanceDifficultyRecords.ensure_character_zone_record(character.my_id, 0)
 
 
 func _normalize_dissonance_character_difficulty_states() -> void:
-	for character_id in DISSONANCE_CHARACTER_IDS:
-		_ensure_character_difficulty_info_for_id(character_id)
-
-	ProgressData.set_max_selectable_difficulty()
+	DissonanceDifficultyRecords.restore_records()
 
 
 func _ensure_character_difficulty_info_for_id(character_id: String) -> void:
