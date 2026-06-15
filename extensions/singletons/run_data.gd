@@ -7,6 +7,7 @@ var influencer_character_hash = Keys.generate_hash("character_influencer")
 var producer_character_hash = Keys.generate_hash("character_producer")
 var cash_cow_item_hash = Keys.generate_hash("item_cash_cow")
 var black_notebook_item_hash = Keys.generate_hash("item_black_notebook")
+var disturbing_photo_item_hash = Keys.generate_hash("item_disturbing_photo")
 var chal_unlock_conductor_hash = Keys.generate_hash("chal_unlock_conductor")
 var chal_unlock_poet_hash = Keys.generate_hash("chal_unlock_poet")
 var chal_unlock_producer_hash = Keys.generate_hash("chal_unlock_producer")
@@ -37,6 +38,8 @@ func init_tracked_effects() -> Dictionary:
 		tracked_effects[cash_cow_item_hash] = 0
 	if not tracked_effects.has(black_notebook_item_hash):
 		tracked_effects[black_notebook_item_hash] = 0
+	if not tracked_effects.has(disturbing_photo_item_hash):
+		tracked_effects[disturbing_photo_item_hash] = 0
 	return tracked_effects
 
 

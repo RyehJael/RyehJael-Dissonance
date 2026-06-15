@@ -1,4 +1,4 @@
-[gd_resource type="Resource" load_steps=20 format=2]
+[gd_resource type="Resource" load_steps=23 format=2]
 
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content_data/content_data.gd" type="Script" id=1]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/characters/conductor/conductor_data.tres" type="Resource" id=2]
@@ -19,13 +19,16 @@
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_producer.tres" type="Resource" id=17]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/black_notebook/black_notebook_data.tres" type="Resource" id=18]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_poet.tres" type="Resource" id=19]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/disturbing_photo/disturbing_photo_data.tres" type="Resource" id=20]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_influencer.tres" type="Resource" id=21]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/disturbing_photo/torn_photo_data.tres" type="Resource" id=22]
 
 [resource]
 script = ExtResource( 1 )
-items = [ ExtResource( 5 ), ExtResource( 14 ), ExtResource( 18 ) ]
+items = [ ExtResource( 5 ), ExtResource( 14 ), ExtResource( 18 ), ExtResource( 20 ), ExtResource( 22 ) ]
 weapons = [  ]
 characters = [ ExtResource( 2 ), ExtResource( 3 ), ExtResource( 4 ), ExtResource( 7 ), ExtResource( 8 ), ExtResource( 15 ) ]
 weapons_characters = [  ]
 debug_items = [  ]
 sets = [  ]
-challenges = [ ExtResource( 6 ), ExtResource( 9 ), ExtResource( 10 ), ExtResource( 11 ), ExtResource( 12 ), ExtResource( 13 ), ExtResource( 16 ), ExtResource( 17 ), ExtResource( 19 ) ]
+challenges = [ ExtResource( 6 ), ExtResource( 9 ), ExtResource( 10 ), ExtResource( 11 ), ExtResource( 12 ), ExtResource( 13 ), ExtResource( 16 ), ExtResource( 17 ), ExtResource( 19 ), ExtResource( 21 ) ]

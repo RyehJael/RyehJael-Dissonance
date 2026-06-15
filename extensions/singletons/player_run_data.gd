@@ -14,7 +14,8 @@ static func init_effects() -> Dictionary:
 		Keys.generate_hash("effect_poet_enemy_scaling_per_curse"): 0,
 		Keys.generate_hash("effect_influencer_harvesting_on_ban"): 0,
 		Keys.generate_hash("effect_influencer_bonus_ban_on_purchase"): 0,
-		Keys.generate_hash("effect_black_notebook_xp_from_cursed_enemy"): 0
+		Keys.generate_hash("effect_black_notebook_xp_from_cursed_enemy"): 0,
+		Keys.generate_hash("effect_disturbing_photo_ban_next_bought_item"): 0
 	})
 
 

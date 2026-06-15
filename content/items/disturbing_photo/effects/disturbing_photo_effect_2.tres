@@ -1,0 +1,13 @@
+[gd_resource type="Resource" load_steps=2 format=2]
+
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/disturbing_photo/disturbing_photo_ban_effect.gd" type="Script" id=1]
+
+[resource]
+script = ExtResource( 1 )
+key = "effect_disturbing_photo_ban_next_bought_item"
+text_key = "EFFECT_DISTURBING_PHOTO_BAN"
+value = 1
+custom_key = ""
+storage_method = 0
+effect_sign = 2
+custom_args = [  ]

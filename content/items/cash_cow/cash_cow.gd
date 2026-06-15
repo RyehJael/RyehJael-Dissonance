@@ -247,7 +247,7 @@ func _get_player_health_regen_value(player: Player) -> int:
 
 	var torture_effect = RunData.get_player_effect(Keys.torture_hash, player.player_index)
 	if torture_effect > 0:
-		return torture_effect
+		return int(torture_effect)
 
 	var hp_regen_val = 1
 	var bonus_hp_regen_effects = RunData.get_player_effect(Keys.hp_regen_bonus_hash, player.player_index)
@@ -258,11 +258,11 @@ func _get_player_health_regen_value(player: Player) -> int:
 				multiplier += effect[0]
 		hp_regen_val = int(hp_regen_val * (1.0 + multiplier))
 
-	return max(0, hp_regen_val)
+	return int(max(0, hp_regen_val))
 
 
 func _heal_cash_cow(value: int) -> int:
-	var actual_value = min(value, max_stats.health - current_stats.health)
+	var actual_value := int(min(value, max_stats.health - current_stats.health))
 	if actual_value <= 0:
 		return 0
 

@@ -83,6 +83,10 @@ func _init():
 		"ITEM_BLACK_NOTEBOOK": "Black Notebook",
 		"EFFECT_BLACK_NOTEBOOK_XP_FROM_CURSED_ENEMY": "Cursed enemy kills have a {0}% chance to give {1} XP ({2})",
 		"XP_GAINED": "XP gained: {0}",
+		"ITEM_DISTURBING_PHOTO": "Disturbing Photo",
+		"EFFECT_DISTURBING_PHOTO_BAN": "The next non-unique item bought is banned",
+		"ITEM_TORN_PHOTO": "Torn Photo",
+		"EFFECT_TORN_PHOTO": "The photo has been torn",
 		"CASH_COW_NAME": "Cash Cow",
 		"CASH_COW_BEHAVIOUR_DESCRIPTION": "Moves toward materials and eats them. While you are nearby, it cannot move and heals from half your HP Regeneration rate. Enemies can target and kill it. When killed, it drops all held materials and stays dead until the next wave."
 	}
@@ -110,6 +114,7 @@ func _ready()->void:
 	call_deferred("_normalize_stardust_unlock_state")
 	call_deferred("_normalize_cash_cow_unlock_state")
 	call_deferred("_normalize_black_notebook_unlock_state")
+	call_deferred("_normalize_disturbing_photo_unlock_state")
 	call_deferred("_normalize_conch_unlock_state")
 	if ProgressData.has_signal("dlc_activated"):
 		var _dlc_activated = ProgressData.connect("dlc_activated", self, "_on_dlc_activated")
@@ -381,6 +386,10 @@ func _register_custom_effects() -> void:
 	if black_notebook_effect != null and not _has_effect_with_id(black_notebook_effect.get_id()):
 		ItemService.effects.push_back(black_notebook_effect)
 
+	var disturbing_photo_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/items/disturbing_photo/disturbing_photo_ban_effect.gd")
+	if disturbing_photo_effect != null and not _has_effect_with_id(disturbing_photo_effect.get_id()):
+		ItemService.effects.push_back(disturbing_photo_effect)
+
 	var producer_pet_affinity_effect = load("res://mods-unpacked/RyehJael-Dissonance/content/characters/producer/producer_pet_affinity_effect.gd")
 	if producer_pet_affinity_effect != null and not _has_effect_with_id(producer_pet_affinity_effect.get_id()):
 		ItemService.effects.push_back(producer_pet_affinity_effect)
@@ -389,6 +398,7 @@ func _register_custom_effects() -> void:
 func _register_dissonance_challenges() -> void:
 	for challenge_path in [
 		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_aeonian.tres",
+		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_influencer.tres",
 		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_poet.tres",
 		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_producer.tres",
 		"res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_conductor.tres",
@@ -657,6 +667,30 @@ func _normalize_black_notebook_unlock_state() -> void:
 
 	if (should_unlock_from_challenge or should_unlock_from_poet_clear) and not ProgressData.items_unlocked.has(black_notebook_item_hash):
 		ProgressData.items_unlocked.push_back(black_notebook_item_hash)
+		ItemService.init_unlocked_pool()
+
+
+func _normalize_disturbing_photo_unlock_state() -> void:
+	var disturbing_photo_item_id = "item_disturbing_photo"
+	var disturbing_photo_item_hash = Keys.generate_hash(disturbing_photo_item_id)
+
+	if ProgressData.items_unlocked.has(disturbing_photo_item_id):
+		ProgressData.items_unlocked.erase(disturbing_photo_item_id)
+	if ProgressData.items_unlocked.has(disturbing_photo_item_hash):
+		ProgressData.items_unlocked.erase(disturbing_photo_item_hash)
+
+	var influencer_challenge_hash = Keys.generate_hash("chal_influencer")
+	var should_unlock_from_challenge = ProgressData.is_unlock_all_save() or ChallengeService.is_challenge_completed(influencer_challenge_hash)
+	var should_unlock_from_influencer_clear = false
+	var influencer_hash = Keys.generate_hash("character_influencer")
+	for zone_id in [0, 1]:
+		var diff_info = ProgressData.get_character_difficulty_info(influencer_hash, zone_id)
+		if diff_info != null and diff_info.max_difficulty_beaten.difficulty_value >= 0:
+			should_unlock_from_influencer_clear = true
+			break
+
+	if should_unlock_from_challenge or should_unlock_from_influencer_clear:
+		ProgressData.items_unlocked.push_back(disturbing_photo_item_hash)
 		ItemService.init_unlocked_pool()
 
 

@@ -3,6 +3,8 @@ extends "res://ui/menus/shop/base_shop.gd"
 var _poet_curse_shop_reroll_hash = Keys.generate_hash("effect_poet_curse_shop_reroll")
 var _influencer_ban_harvesting_hash = Keys.generate_hash("effect_influencer_harvesting_on_ban")
 var _influencer_bonus_ban_hash = Keys.generate_hash("effect_influencer_bonus_ban_on_purchase")
+var _disturbing_photo_ban_hash = Keys.generate_hash("effect_disturbing_photo_ban_next_bought_item")
+var _disturbing_photo_item_hash = Keys.generate_hash("item_disturbing_photo")
 var _influencer_character_hash = Keys.generate_hash("character_influencer")
 var _influencer_ban_icon = preload("res://items/challenges/ban_system_icon.png")
 var _chal_unlock_influencer_hash = Keys.generate_hash("chal_unlock_influencer")
@@ -71,10 +73,12 @@ func _set_poet_reroll_button(player_index: int) -> void:
 
 func on_shop_item_bought(shop_item: ShopItem, player_index: int) -> void:
 	var is_steal = _dissonance_processing_steal_players.has(player_index)
+	var pending_disturbing_photo_bans = _get_pending_disturbing_photo_bans(player_index)
 	.on_shop_item_bought(shop_item, player_index)
 
 	if is_steal:
 		return
+	_try_trigger_disturbing_photo_ban(player_index, shop_item, pending_disturbing_photo_bans)
 	_try_add_influencer_purchase(player_index, shop_item)
 
 
@@ -126,6 +130,58 @@ func _try_add_influencer_purchase(player_index: int, shop_item: ShopItem) -> voi
 	player_data.remaining_ban_token += bonus_bans
 	_get_shop_items_container(player_index).on_ban_update_remaining_token()
 	_display_influencer_bonus_ban_icon(shop_item)
+
+
+func _try_trigger_disturbing_photo_ban(player_index: int, shop_item: ShopItem, pending_bans_before_purchase: int) -> void:
+	if pending_bans_before_purchase <= 0:
+		return
+	if not _is_valid_dissonance_player_index(player_index):
+		return
+	if shop_item == null or not _is_disturbing_photo_ban_target(shop_item.item_data, player_index):
+		return
+
+	var player_data = RunData.players_data[player_index]
+	var bought_item_hash = shop_item.item_data.my_id_hash
+	if not player_data.banned_items.has(bought_item_hash):
+		player_data.banned_items.push_back(bought_item_hash)
+		_try_add_influencer_ban_harvesting(player_index)
+		_try_complete_influencer_unlock_challenge(player_index)
+		_display_influencer_bonus_ban_icon(shop_item)
+
+	_consume_disturbing_photo(player_index)
+	_update_stats(player_index)
+
+
+func _is_disturbing_photo_ban_target(item_data: ItemParentData, player_index: int) -> bool:
+	if item_data == null or not item_data is ItemData:
+		return false
+	if item_data.max_nb == 1 or item_data.max_nb == 0:
+		return false
+	if RunData.players_data[player_index].banned_items.has(item_data.my_id_hash):
+		return false
+	return true
+
+
+func _consume_disturbing_photo(player_index: int) -> void:
+	var photo_item = _get_player_disturbing_photo(player_index)
+	if photo_item == null:
+		return
+
+	RunData.remove_item(photo_item, player_index)
+	_get_gear_container(player_index).set_items_data(RunData.get_player_items(player_index))
+
+
+func _get_player_disturbing_photo(player_index: int) -> ItemData:
+	for item in RunData.get_player_items_ref(player_index):
+		if item is ItemData and item.my_id_hash == _disturbing_photo_item_hash:
+			return item
+	return null
+
+
+func _get_pending_disturbing_photo_bans(player_index: int) -> int:
+	if not _is_valid_dissonance_player_index(player_index):
+		return 0
+	return int(RunData.get_player_effect(_disturbing_photo_ban_hash, player_index))
 
 
 func _display_influencer_bonus_ban_icon(shop_item: ShopItem) -> void:
