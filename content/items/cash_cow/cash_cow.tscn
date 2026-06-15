@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=2]
+[gd_scene load_steps=16 format=2]
 
 [ext_resource path="res://entities/units/pet/scapegoat/scapegoat.tscn" type="PackedScene" id=1]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow.gd" type="Script" id=2]
@@ -10,6 +10,8 @@
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_body.png" type="Texture" id=22]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_head_1.png" type="Texture" id=23]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_head_0.png" type="Texture" id=24]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cashcow_dying.wav" type="AudioStream" id=25]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cashcow_pet.wav" type="AudioStream" id=26]
 
 [sub_resource type="CircleShape2D" id=1]
 
@@ -22,6 +24,9 @@ radius = 150.0
 script = ExtResource( 2 )
 stats = ExtResource( 3 )
 can_be_targeted_by_enemies = true
+sound_dying = ExtResource( 25 )
+sound_rising = ExtResource( 26 )
+sound_pet = ExtResource( 26 )
 
 [node name="sp_shadow" parent="Animation/Viewport/offset" index="0"]
 texture = ExtResource( 21 )

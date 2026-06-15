@@ -22,6 +22,7 @@ var _healing_timer := FixedTimer.new()
 var _healing_movement_locked := false
 var _can_move_before_healing := true
 var _mode_before_healing := RigidBody2D.MODE_CHARACTER
+var _head_animations_localized := false
 
 onready var life_bar = $"%LifeBar" as UIProgressBar
 
@@ -171,6 +172,8 @@ func _sync_tracking() -> void:
 
 
 func _replace_head_animation_textures() -> void:
+	_localize_head_animations()
+
 	for animation_name in _animation_player.get_animation_list():
 		var animation = _animation_player.get_animation(animation_name)
 		if animation == null:
@@ -183,6 +186,40 @@ func _replace_head_animation_textures() -> void:
 			for key_index in range(animation.track_get_key_count(track_index)):
 				var texture = animation.track_get_key_value(track_index, key_index)
 				animation.track_set_key_value(track_index, key_index, _get_cash_cow_head_texture(texture))
+
+
+func _localize_head_animations() -> void:
+	if _head_animations_localized:
+		return
+
+	var animation_names = _animation_player.get_animation_list()
+	var animation_next := {}
+	var blend_times := []
+
+	for from_animation in animation_names:
+		animation_next[from_animation] = _animation_player.animation_get_next(from_animation)
+		for to_animation in animation_names:
+			var blend_time = _animation_player.get_blend_time(from_animation, to_animation)
+			if blend_time > 0.0:
+				blend_times.push_back([from_animation, to_animation, blend_time])
+
+	for animation_name in animation_names:
+		var animation = _animation_player.get_animation(animation_name)
+		if animation == null:
+			continue
+
+		_animation_player.remove_animation(animation_name)
+		_animation_player.add_animation(animation_name, animation.duplicate(true))
+
+	for animation_name in animation_next:
+		var next_animation = animation_next[animation_name]
+		if next_animation != "":
+			_animation_player.animation_set_next(animation_name, next_animation)
+
+	for blend_time_data in blend_times:
+		_animation_player.set_blend_time(blend_time_data[0], blend_time_data[1], blend_time_data[2])
+
+	_head_animations_localized = true
 
 
 func _get_cash_cow_head_texture(texture) -> Texture:

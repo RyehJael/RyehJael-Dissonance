@@ -1,0 +1,23 @@
+[remap]
+
+importer="wav"
+type="AudioStreamSample"
+path="res://.import/cashcow_dying.wav-69561cf5c410c57d26bdd5743600e07d.sample"
+
+[deps]
+
+source_file="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cashcow_dying.wav"
+dest_files=[ "res://.import/cashcow_dying.wav-69561cf5c410c57d26bdd5743600e07d.sample" ]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=0

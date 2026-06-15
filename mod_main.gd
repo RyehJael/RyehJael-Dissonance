@@ -96,6 +96,7 @@ func _init():
 	ModLoaderMod.install_script_extension(ext_dir + "global/weapon_data.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "ui/menus/shop/base_shop.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "ui/menus/shop/item_description.gd")
+	ModLoaderMod.install_script_extension(ext_dir + "singletons/progress_data.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/run_data.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/player_run_data.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "global/screenshaker.gd")
