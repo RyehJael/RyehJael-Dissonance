@@ -1,6 +1,7 @@
 extends "res://singletons/run_data.gd"
 
 const DISSONANCE_LOG = "RyehJael-Dissonance"
+const DissonanceDifficultyRecords = preload("res://mods-unpacked/RyehJael-Dissonance/extensions/dissonance_difficulty_records.gd")
 var conductor_level_shift_hash = Keys.generate_hash("effect_conductor_level_shift")
 var siren_character_hash = Keys.generate_hash("character_siren")
 var influencer_character_hash = Keys.generate_hash("character_influencer")
@@ -22,8 +23,12 @@ const DISSONANCE_CHARACTER_IDS = [
 
 
 func apply_run_won() -> void:
+	var should_persist_dissonance_records = _has_current_dissonance_character()
 	_ensure_current_dissonance_character_difficulty_records()
 	.apply_run_won()
+	if should_persist_dissonance_records:
+		DissonanceDifficultyRecords.persist_records()
+		ProgressData.save()
 
 
 func init_tracked_effects() -> Dictionary:
@@ -249,7 +254,15 @@ func _ensure_current_dissonance_character_difficulty_records() -> void:
 		var character = get_player_character(player_index)
 		if character == null or not DISSONANCE_CHARACTER_IDS.has(character.my_id):
 			continue
-		_ensure_dissonance_character_zone_difficulty_info(character.my_id, current_zone)
+		DissonanceDifficultyRecords.ensure_character_zone_record(character.my_id, current_zone)
+
+
+func _has_current_dissonance_character() -> bool:
+	for player_index in get_player_count():
+		var character = get_player_character(player_index)
+		if character != null and DissonanceDifficultyRecords.is_dissonance_character_id(character.my_id):
+			return true
+	return false
 
 
 func _ensure_dissonance_character_zone_difficulty_info(character_id: String, zone_id: int) -> void:

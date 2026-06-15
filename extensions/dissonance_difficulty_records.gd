@@ -68,7 +68,7 @@ static func _merge_saved_records_into_progress() -> void:
 		if not is_dissonance_character_id(character_id):
 			continue
 		var serialized_info = saved_records[character_id]
-		if not serialized_info is Dictionary:
+		if not (serialized_info is Dictionary):
 			continue
 		var character_info = _get_or_create_character_info(character_id)
 		_merge_serialized_character_info(character_info, serialized_info)
@@ -83,7 +83,7 @@ static func _store_progress_records() -> void:
 
 
 static func _get_saved_records() -> Dictionary:
-	if not ProgressData.data.has(DATA_KEY) or not ProgressData.data[DATA_KEY] is Dictionary:
+	if not ProgressData.data.has(DATA_KEY) or not (ProgressData.data[DATA_KEY] is Dictionary):
 		ProgressData.data[DATA_KEY] = {}
 	return ProgressData.data[DATA_KEY]
 
@@ -124,11 +124,11 @@ static func _merge_character_info(target_info, source_info) -> void:
 
 
 static func _merge_serialized_character_info(target_info, serialized_info: Dictionary) -> void:
-	if not serialized_info.has("zones_difficulty_info") or not serialized_info.zones_difficulty_info is Array:
+	if not serialized_info.has("zones_difficulty_info") or not (serialized_info.zones_difficulty_info is Array):
 		return
 
 	for serialized_zone_info in serialized_info.zones_difficulty_info:
-		if not serialized_zone_info is Dictionary or not serialized_zone_info.has("zone_id"):
+		if not (serialized_zone_info is Dictionary) or not serialized_zone_info.has("zone_id"):
 			continue
 		var target_zone_info = _get_or_create_zone_info(target_info, int(serialized_zone_info.zone_id))
 		_merge_serialized_zone_info(target_zone_info, serialized_zone_info)
@@ -161,7 +161,7 @@ static func _merge_serialized_zone_info(target_zone_info, serialized_zone_info: 
 
 
 static func _merge_difficulty_score(target_score, serialized_score, is_endless: bool) -> void:
-	if not serialized_score is Dictionary:
+	if not (serialized_score is Dictionary):
 		return
 
 	var difficulty_value = int(serialized_score.get("difficulty_value", -1))

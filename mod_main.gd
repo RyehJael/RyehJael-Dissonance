@@ -260,7 +260,10 @@ func _add_unlocked_by_default_for_content_data(content_data) -> void:
 func _ensure_character_difficulty_info(character: CharacterData) -> void:
 	if character == null:
 		return
-	DissonanceDifficultyRecords.ensure_character_zone_record(character.my_id, 0)
+	if DissonanceDifficultyRecords.is_dissonance_character_id(character.my_id):
+		DissonanceDifficultyRecords.restore_records()
+		return
+	_ensure_character_difficulty_info_for_id(character.my_id)
 
 
 func _normalize_dissonance_character_difficulty_states() -> void:
