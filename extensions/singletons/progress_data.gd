@@ -2,6 +2,8 @@ extends "res://singletons/progress_data.gd"
 
 const DissonanceDifficultyRecords = preload("res://mods-unpacked/RyehJael-Dissonance/extensions/dissonance_difficulty_records.gd")
 
+var dissonance_character_difficulty_records := {}
+
 
 func get_character_difficulty_info(character_id: int, zone_id: int) -> ZoneDifficultyInfo:
 	var dissonance_character_id = DissonanceDifficultyRecords.get_character_id_from_hash(character_id)
@@ -23,4 +25,17 @@ func get_current_save_object() -> Dictionary:
 
 func load_with_generic_loader(loader, path: = "") -> void:
 	.load_with_generic_loader(loader, path)
+	var loader_records = loader.get("dissonance_character_difficulty_records")
+	if loader_records is Dictionary:
+		dissonance_character_difficulty_records = loader_records.duplicate(true)
 	DissonanceDifficultyRecords.restore_records()
+
+
+func _set_loader_properties(loader_v3: ProgressDataLoaderV3, run_state: Dictionary) -> void:
+	._set_loader_properties(loader_v3, run_state)
+	loader_v3.set("dissonance_character_difficulty_records", dissonance_character_difficulty_records.duplicate(true))
+
+
+func _set_loader_properties_beta(loader_v3: ProgressDataLoaderBeta, run_state: Dictionary) -> void:
+	._set_loader_properties_beta(loader_v3, run_state)
+	loader_v3.set("dissonance_character_difficulty_records", dissonance_character_difficulty_records.duplicate(true))

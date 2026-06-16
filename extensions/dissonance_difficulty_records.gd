@@ -83,9 +83,20 @@ static func _store_progress_records() -> void:
 
 
 static func _get_saved_records() -> Dictionary:
-	if not ProgressData.data.has(DATA_KEY) or not (ProgressData.data[DATA_KEY] is Dictionary):
-		ProgressData.data[DATA_KEY] = {}
-	return ProgressData.data[DATA_KEY]
+	var records = ProgressData.get(DATA_KEY)
+	if not (records is Dictionary):
+		records = {}
+
+	if ProgressData.data.has(DATA_KEY):
+		var legacy_records = ProgressData.data[DATA_KEY]
+		if legacy_records is Dictionary:
+			for character_id in legacy_records.keys():
+				if not records.has(character_id):
+					records[character_id] = legacy_records[character_id]
+		ProgressData.data.erase(DATA_KEY)
+
+	ProgressData.set(DATA_KEY, records)
+	return records
 
 
 static func _get_or_create_character_info(character_id: String):

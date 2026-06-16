@@ -97,6 +97,9 @@ func _init():
 	ModLoaderMod.install_script_extension(ext_dir + "global/weapon_data.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "ui/menus/shop/base_shop.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "ui/menus/shop/item_description.gd")
+	ModLoaderMod.install_script_extension(ext_dir + "ui/menus/run/character_info_panel.gd")
+	ModLoaderMod.install_script_extension(ext_dir + "singletons/progress_data_loader_v3.gd")
+	ModLoaderMod.install_script_extension(ext_dir + "singletons/progress_data_loader_beta.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/progress_data.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/run_data.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/player_run_data.gd")
@@ -109,7 +112,7 @@ func _init():
 func _ready()->void:
 	_register_custom_effects()
 	_load_dissonance_content()
-	DissonanceDifficultyRecords.restore_records()
+	call_deferred("_restore_dissonance_difficulty_records")
 	call_deferred("_register_dissonance_challenges")
 	call_deferred("_normalize_dissonance_character_difficulty_states")
 	call_deferred("_normalize_dissonance_character_unlock_states")
@@ -123,6 +126,10 @@ func _ready()->void:
 		var _dlc_activated = ProgressData.connect("dlc_activated", self, "_on_dlc_activated")
 	call_deferred("_load_dlc_content_if_available")
 	ModLoaderLog.info("Ready", DISSONANCE_LOG)
+
+
+func _restore_dissonance_difficulty_records() -> void:
+	DissonanceDifficultyRecords.restore_records()
 
 
 func _load_dissonance_content()->void:
@@ -261,7 +268,7 @@ func _ensure_character_difficulty_info(character: CharacterData) -> void:
 	if character == null:
 		return
 	if DissonanceDifficultyRecords.is_dissonance_character_id(character.my_id):
-		DissonanceDifficultyRecords.restore_records()
+		_ensure_character_difficulty_info_for_id(character.my_id)
 		return
 	_ensure_character_difficulty_info_for_id(character.my_id)
 
