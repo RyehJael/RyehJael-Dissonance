@@ -1,6 +1,7 @@
 extends Reference
 
 const DATA_KEY = "dissonance_character_difficulty_records"
+const LOADED_SAVE_PATH_META_KEY = "dissonance_difficulty_records_loaded_save_path"
 const CHARACTER_IDS = [
 	"character_aeonian",
 	"character_conductor",
@@ -22,6 +23,41 @@ static func persist_records() -> void:
 	_merge_saved_records_into_progress()
 	_ensure_all_character_records()
 	_store_progress_records()
+
+
+static func write_records_to_current_save_file() -> void:
+	var save_path = _get_current_profile_save_path()
+	if save_path.empty():
+		return
+	var records = ProgressData.get(DATA_KEY)
+	if not (records is Dictionary):
+		return
+
+	var save_file := File.new()
+	if not save_file.file_exists(save_path):
+		return
+	if save_file.open(save_path, File.READ) != OK:
+		return
+
+	var content = save_file.get_as_text()
+	save_file.close()
+	var parse_result := JSON.parse(content)
+	if parse_result.error != OK or typeof(parse_result.result) != TYPE_DICTIONARY:
+		return
+
+	var save_object = parse_result.result
+	save_object[DATA_KEY] = records.duplicate(true)
+	if save_object.has("data") and save_object.data is Dictionary:
+		save_object.data.erase(DATA_KEY)
+
+	if save_file.open(save_path, File.WRITE) != OK:
+		return
+	var sort_keys := true
+	var indent = ""
+	if OS.has_feature("editor"):
+		indent = "  "
+	save_file.store_string(JSON.print(save_object, indent, sort_keys))
+	save_file.close()
 
 
 static func ensure_character_zone_record(character_id: String, zone_id: int) -> void:
@@ -87,16 +123,68 @@ static func _get_saved_records() -> Dictionary:
 	if not (records is Dictionary):
 		records = {}
 
+	_merge_serialized_records(records, _load_records_from_current_save_file())
+
 	if ProgressData.data.has(DATA_KEY):
 		var legacy_records = ProgressData.data[DATA_KEY]
 		if legacy_records is Dictionary:
-			for character_id in legacy_records.keys():
-				if not records.has(character_id):
-					records[character_id] = legacy_records[character_id]
+			_merge_serialized_records(records, legacy_records)
 		ProgressData.data.erase(DATA_KEY)
 
 	ProgressData.set(DATA_KEY, records)
 	return records
+
+
+static func _load_records_from_current_save_file() -> Dictionary:
+	var save_path = _get_current_profile_save_path()
+	if save_path.empty():
+		return {}
+	if (
+		ProgressData.has_meta(LOADED_SAVE_PATH_META_KEY)
+		and ProgressData.get_meta(LOADED_SAVE_PATH_META_KEY) == save_path
+	):
+		return {}
+
+	var save_file := File.new()
+	if not save_file.file_exists(save_path):
+		return {}
+	if save_file.open(save_path, File.READ) != OK:
+		return {}
+
+	var content = save_file.get_as_text()
+	save_file.close()
+	var parse_result := JSON.parse(content)
+	if parse_result.error != OK or typeof(parse_result.result) != TYPE_DICTIONARY:
+		return {}
+
+	var records = parse_result.result.get(DATA_KEY, {})
+	ProgressData.set_meta(LOADED_SAVE_PATH_META_KEY, save_path)
+	if records is Dictionary:
+		return records
+	return {}
+
+
+static func _get_current_profile_save_path() -> String:
+	if ProgressData.BETA:
+		return ProgressDataLoaderBeta.new(ProgressData.SAVE_DIR, ProgressData.current_profile_id).save_path
+	return ProgressDataLoaderV3.new(ProgressData.SAVE_DIR, ProgressData.current_profile_id).save_path
+
+
+static func _merge_serialized_records(target_records: Dictionary, source_records: Dictionary) -> void:
+	for character_id in source_records.keys():
+		if not is_dissonance_character_id(character_id):
+			continue
+		var source_info = source_records[character_id]
+		if not (source_info is Dictionary):
+			continue
+		if not target_records.has(character_id) or not (target_records[character_id] is Dictionary):
+			target_records[character_id] = source_info.duplicate(true)
+			continue
+
+		var merged_info = CharacterDifficultyInfo.new(character_id)
+		_merge_serialized_character_info(merged_info, target_records[character_id])
+		_merge_serialized_character_info(merged_info, source_info)
+		target_records[character_id] = merged_info.serialize()
 
 
 static func _get_or_create_character_info(character_id: String):
