@@ -82,7 +82,7 @@ func _init():
 		"EFFECT_CASH_COW": "Spawns a Cash Cow that eats and stores materials. At the end of each wave, held materials increase by {0}%. While you are nearby, it cannot move and heals at {1}% of your HP Regeneration rate. Drops all stored materials when killed.",
 		"MATERIALS_HELD": "Materials held: {0}",
 		"ITEM_BLACK_NOTEBOOK": "Black Notebook",
-		"EFFECT_BLACK_NOTEBOOK_XP_FROM_CURSED_ENEMY": "Cursed enemy kills have a {0}% chance to give {1} XP ({2})",
+		"EFFECT_BLACK_NOTEBOOK_XP_FROM_CURSED_ENEMY": "Cursed enemy kills grant [{0}]({1}) bonus experience.",
 		"XP_GAINED": "XP gained: {0}",
 		"ITEM_DISTURBING_PHOTO": "Disturbing Photo",
 		"EFFECT_DISTURBING_PHOTO_BAN": "The next non-unique item bought is banned",

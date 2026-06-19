@@ -1,7 +1,6 @@
 extends "res://items/global/effect.gd"
 
-export(int) var xp_gain := 1
-export(float) var curse_chance_scaling := 0.15
+export(float) var bonus_xp_per_curse := 0.02
 
 
 static func get_id() -> String:
@@ -16,9 +15,7 @@ func apply(player_index: int) -> void:
 
 	var effects = RunData.get_player_effects(player_index)
 	effects[key_hash] = {
-		"base_chance": value,
-		"xp_gain": xp_gain,
-		"curse_chance_scaling": curse_chance_scaling
+		"bonus_xp_per_curse": bonus_xp_per_curse
 	}
 	Utils.reset_stat_cache(player_index)
 
@@ -36,14 +33,13 @@ func unapply(player_index: int) -> void:
 
 func get_args(player_index: int) -> Array:
 	return [
-		_format_chance(_get_xp_chance(player_index)),
-		_format_xp_gain(xp_gain),
-		Utils.get_scaling_stat_icon_text(Keys.stat_curse_hash, curse_chance_scaling, true)
+		_format_number(_get_bonus_xp_value(player_index)),
+		_format_bonus_xp_formula()
 	]
 
 
 func get_text(player_index: int, colored: bool = true) -> String:
-	var signs = [] if not colored else [Sign.POSITIVE, Sign.POSITIVE, Sign.NEUTRAL]
+	var signs = [] if not colored else [Sign.POSITIVE, Sign.NEUTRAL]
 	return Text.text(text_key.to_upper(), get_args(player_index), signs)
 
 
@@ -53,36 +49,33 @@ func get_icon(_player_index: int) -> Texture:
 
 func serialize() -> Dictionary:
 	var serialized = .serialize()
-	serialized.xp_gain = xp_gain
-	serialized.curse_chance_scaling = curse_chance_scaling
+	serialized.bonus_xp_per_curse = bonus_xp_per_curse
 	return serialized
 
 
 func deserialize_and_merge(serialized: Dictionary) -> void:
 	.deserialize_and_merge(serialized)
 
-	if serialized.has("xp_gain"):
-		xp_gain = int(serialized.xp_gain)
-	if serialized.has("curse_chance_scaling"):
-		curse_chance_scaling = float(serialized.curse_chance_scaling)
+	if serialized.has("bonus_xp_per_curse"):
+		bonus_xp_per_curse = float(serialized.bonus_xp_per_curse)
 
 
-func _get_xp_chance(player_index: int) -> float:
+func _format_bonus_xp_formula() -> String:
+	return Utils.get_scaling_stat_icon_text(Keys.stat_curse_hash, bonus_xp_per_curse, false)
+
+
+func _get_bonus_xp_value(player_index: int) -> float:
 	if not _can_use_player_effects(player_index):
-		return max(0.0, float(value))
+		return 0.0
 	var curse = max(0.0, Utils.get_stat(Keys.stat_curse_hash, player_index))
-	return max(0.0, float(value) + curse * curse_chance_scaling)
+	return max(0.0, curse * bonus_xp_per_curse)
 
 
-func _format_chance(chance: float) -> String:
-	var rounded_chance = stepify(chance, 0.01)
-	if rounded_chance == int(rounded_chance):
-		return str(int(rounded_chance))
-	return str(rounded_chance)
-
-
-func _format_xp_gain(gain: int) -> String:
-	return "+" + str(gain) if gain >= 0 else str(gain)
+func _format_number(value: float) -> String:
+	var rounded_value = stepify(value, 0.01)
+	if rounded_value == int(rounded_value):
+		return str(int(rounded_value))
+	return str(rounded_value)
 
 
 func _can_use_player_effects(player_index: int) -> bool:

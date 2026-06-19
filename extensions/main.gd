@@ -11,6 +11,7 @@ const CASH_COW_PICKUP_PLAYER_INDEX = -7777
 const PRODUCER_PET_INDICATOR_SCRIPT = preload("res://mods-unpacked/RyehJael-Dissonance/content/characters/producer/producer_pet_indicator.gd")
 const PRODUCER_PET_INDICATOR_NODE_NAME = "DissonanceProducerPetIndicator"
 const PRODUCER_PET_AFFINITY_RANGE_SCALING := 0.5
+const BLACK_NOTEBOOK_BONUS_XP_PER_CURSE := 0.02
 
 var _siren_spawn_cursed_enemy_hash = Keys.generate_hash("effect_siren_spawn_cursed_enemy")
 var _siren_bonus_materials_hash = Keys.generate_hash("effect_siren_bonus_materials_from_cursed_enemies")
@@ -30,12 +31,14 @@ var _siren_curse_scene_effect_behavior_data: Resource = null
 var _pending_siren_spawn_sources := {}
 var _aeonian_round_duration_bonus = 0
 var _dissonance_cursed_enemy_kills_this_wave := [0, 0, 0, 0]
+var _black_notebook_xp_tracking_remainders := [0.0, 0.0, 0.0, 0.0]
 var _producer_pet_affinity_progress := {}
 var _producer_affinity_indicators := {}
 
 
 func _ready() -> void:
 	_dissonance_cursed_enemy_kills_this_wave = [0, 0, 0, 0]
+	_black_notebook_xp_tracking_remainders = [0.0, 0.0, 0.0, 0.0]
 	if _resource_exists(CURSE_SCENE_EFFECT_BEHAVIOR_PATH):
 		_siren_curse_scene_effect_behavior_data = load(CURSE_SCENE_EFFECT_BEHAVIOR_PATH)
 	_try_complete_aeonian_unlock_challenge()
@@ -241,21 +244,62 @@ func _try_gain_black_notebook_xp(enemy: Enemy, args: Entity.DieArgs) -> void:
 	if not (effect_data is Dictionary):
 		return
 
-	var base_chance = max(0.0, float(effect_data.get("base_chance", 0.0)))
-	var curse_chance_scaling = max(0.0, float(effect_data.get("curse_chance_scaling", 0.0)))
-	var xp_gain = max(0, int(effect_data.get("xp_gain", 0)))
-	if base_chance <= 0.0 or xp_gain <= 0:
+	var bonus_xp_per_curse = max(0.0, float(effect_data.get("bonus_xp_per_curse", BLACK_NOTEBOOK_BONUS_XP_PER_CURSE)))
+	if bonus_xp_per_curse <= 0.0:
 		return
 
+	var xp_gain = _get_black_notebook_bonus_xp(player_index, bonus_xp_per_curse)
+	if xp_gain <= 0.0:
+		return
+
+	_add_black_notebook_bonus_xp(xp_gain, player_index)
+	_track_black_notebook_xp(player_index, xp_gain)
+
+
+func _get_black_notebook_bonus_xp(player_index: int, bonus_xp_per_curse: float) -> float:
 	var curse = max(0.0, Utils.get_stat(Keys.stat_curse_hash, player_index))
-	var chance = max(0.0, base_chance + curse * curse_chance_scaling) / 100.0
-	if not Utils.get_chance_success(chance):
+	return max(0.0, curse * bonus_xp_per_curse)
+
+
+func _add_black_notebook_bonus_xp(value: float, player_index: int) -> void:
+	if value <= 0.0:
 		return
 
-	RunData.add_xp(xp_gain, player_index)
-	if player_index >= 0 and player_index < RunData.tracked_item_effects.size() and not RunData.tracked_item_effects[player_index].has(_black_notebook_item_hash):
+	var player_data = RunData.players_data[player_index]
+	player_data.current_xp += value * (1.0 + (Utils.get_stat(Keys.xp_gain_hash, player_index) / 100.0))
+
+	var next_level_xp = RunData.get_next_level_xp_needed(player_index)
+	RunData.emit_signal("xp_added", player_data.current_xp, next_level_xp, player_index)
+
+	while player_data.current_xp >= next_level_xp:
+		RunData.level_up(player_index)
+		RunData.emit_signal("xp_added", player_data.current_xp, next_level_xp, player_index)
+		next_level_xp = RunData.get_next_level_xp_needed(player_index)
+
+
+func _track_black_notebook_xp(player_index: int, xp_gain: float) -> void:
+	if player_index < 0 or player_index >= RunData.tracked_item_effects.size():
+		return
+	_ensure_black_notebook_xp_tracking_slot(player_index)
+	if not RunData.tracked_item_effects[player_index].has(_black_notebook_item_hash):
 		RunData.tracked_item_effects[player_index][_black_notebook_item_hash] = 0
-	RunData.add_tracked_value(player_index, _black_notebook_item_hash, xp_gain)
+
+	_black_notebook_xp_tracking_remainders[player_index] += xp_gain
+	var whole_xp = int(floor(_black_notebook_xp_tracking_remainders[player_index]))
+	if whole_xp <= 0:
+		return
+
+	_black_notebook_xp_tracking_remainders[player_index] -= whole_xp
+	RunData.add_tracked_value(player_index, _black_notebook_item_hash, whole_xp)
+
+
+func _ensure_black_notebook_xp_tracking_slot(player_index: int) -> void:
+	if player_index < _black_notebook_xp_tracking_remainders.size():
+		return
+	var old_size = _black_notebook_xp_tracking_remainders.size()
+	_black_notebook_xp_tracking_remainders.resize(player_index + 1)
+	for index in range(old_size, _black_notebook_xp_tracking_remainders.size()):
+		_black_notebook_xp_tracking_remainders[index] = 0.0
 
 
 func _ensure_dissonance_cursed_enemy_kill_slot(player_index: int) -> void:
