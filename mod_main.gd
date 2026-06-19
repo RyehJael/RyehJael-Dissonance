@@ -101,6 +101,7 @@ func _init():
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/progress_data_loader_v3.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/progress_data_loader_beta.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/progress_data.gd")
+	ModLoaderMod.install_script_extension(ext_dir + "singletons/item_service.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/run_data.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/player_run_data.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "global/screenshaker.gd")
