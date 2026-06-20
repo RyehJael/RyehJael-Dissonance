@@ -78,9 +78,12 @@ func _init():
 		"EFFECT_CONCH_SPAWN_CURSED_ENEMY": "{0}% chance to spawn an extra cursed enemy when killing an enemy with this weapon",
 		"WEAPON_BATON": "Baton",
 		"EFFECT_BATON_STAT_SHIFT": "Every {0} enemies killed by this weapon in a wave: {1} from your highest stat, {2} to your lowest stat",
+		"ITEM_CASH_CALF": "Cash Calf",
 		"ITEM_CASH_COW": "Cash Cow",
-		"EFFECT_CASH_COW": "Spawns a Cash Cow that eats and stores materials. At the end of each wave, held materials increase by {0}%. While you are nearby, it cannot move and heals at {1}% of your HP Regeneration rate. Drops all stored materials when killed.",
+		"EFFECT_CASH_COW": "Spawns a Cash Cow that eats and stores materials. At the end of each wave, held materials increase by {0}%. It has {2} Max HP. While you are nearby, it cannot move and heals at {1}% of your HP Regeneration rate. When killed, drops all stored materials and becomes a Cow Head.",
 		"MATERIALS_HELD": "Materials held: {0}",
+		"ITEM_COW_HEAD": "Cow Head",
+		"MATERIALS_DROPPED": "Materials dropped: {0}",
 		"ITEM_BLACK_NOTEBOOK": "Black Notebook",
 		"EFFECT_BLACK_NOTEBOOK_XP_FROM_CURSED_ENEMY": "Cursed enemy kills grant [{0}]({1}) bonus experience.",
 		"XP_GAINED": "XP gained: {0}",
@@ -89,7 +92,7 @@ func _init():
 		"ITEM_TORN_PHOTO": "Torn Photo",
 		"EFFECT_TORN_PHOTO": "The photo has been torn",
 		"CASH_COW_NAME": "Cash Cow",
-		"CASH_COW_BEHAVIOUR_DESCRIPTION": "Moves toward materials and eats them. While you are nearby, it cannot move and heals from half your HP Regeneration rate. Enemies can target and kill it. When killed, it drops all held materials and stays dead until the next wave."
+		"CASH_COW_BEHAVIOUR_DESCRIPTION": "Moves toward materials and eats them. While you are nearby, it cannot move and heals from half your HP Regeneration rate. Enemies can target and kill it. When killed, it drops all held materials, leaves the map, and its item becomes a Cow Head."
 	}
 
 	ModLoaderMod.install_script_extension(ext_dir + "main.gd")
@@ -634,13 +637,19 @@ func _normalize_stardust_unlock_state() -> void:
 
 
 func _normalize_cash_cow_unlock_state() -> void:
-	var cash_cow_item_id = "item_cash_cow"
-	var cash_cow_item_hash = Keys.generate_hash(cash_cow_item_id)
+	var cash_cow_item_ids = [
+		"item_cash_cow",
+		"item_cash_cow_rare",
+		"item_cash_cow_epic",
+		"item_cash_cow_legendary"
+	]
 
-	if ProgressData.items_unlocked.has(cash_cow_item_id):
-		ProgressData.items_unlocked.erase(cash_cow_item_id)
-	if ProgressData.items_unlocked.has(cash_cow_item_hash):
-		ProgressData.items_unlocked.erase(cash_cow_item_hash)
+	for cash_cow_item_id in cash_cow_item_ids:
+		var cash_cow_item_hash = Keys.generate_hash(cash_cow_item_id)
+		if ProgressData.items_unlocked.has(cash_cow_item_id):
+			ProgressData.items_unlocked.erase(cash_cow_item_id)
+		if ProgressData.items_unlocked.has(cash_cow_item_hash):
+			ProgressData.items_unlocked.erase(cash_cow_item_hash)
 
 	var producer_challenge_hash = Keys.generate_hash("chal_producer")
 	var should_unlock_from_challenge = ProgressData.is_unlock_all_save() or ChallengeService.is_challenge_completed(producer_challenge_hash)
@@ -653,7 +662,10 @@ func _normalize_cash_cow_unlock_state() -> void:
 			break
 
 	if should_unlock_from_challenge or should_unlock_from_producer_clear:
-		ProgressData.items_unlocked.push_back(cash_cow_item_hash)
+		for cash_cow_item_id in cash_cow_item_ids:
+			var cash_cow_item_hash = Keys.generate_hash(cash_cow_item_id)
+			if not ProgressData.items_unlocked.has(cash_cow_item_hash):
+				ProgressData.items_unlocked.push_back(cash_cow_item_hash)
 		ItemService.init_unlocked_pool()
 
 

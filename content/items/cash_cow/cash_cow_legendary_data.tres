@@ -1,18 +1,18 @@
 [gd_resource type="Resource" load_steps=4 format=2]
 
 [ext_resource path="res://items/global/item_data.gd" type="Script" id=1]
-[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_effect.tres" type="Resource" id=2]
-[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_calf_icon.png" type="Texture" id=3]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_legendary_effect.tres" type="Resource" id=2]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_legendary_icon.png" type="Texture" id=3]
 
 [resource]
 script = ExtResource( 1 )
-my_id = "item_cash_cow"
+my_id = "item_cash_cow_legendary"
 unlocked_by_default = false
 can_be_looted = true
 icon = ExtResource( 3 )
-name = "ITEM_CASH_CALF"
-tier = 0
-value = 30
+name = "ITEM_CASH_COW"
+tier = 3
+value = 150
 effects = [ ExtResource( 2 ) ]
 tracking_text = "MATERIALS_HELD"
 is_lockable = true

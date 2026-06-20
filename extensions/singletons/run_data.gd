@@ -2,11 +2,20 @@ extends "res://singletons/run_data.gd"
 
 const DISSONANCE_LOG = "RyehJael-Dissonance"
 const DissonanceDifficultyRecords = preload("res://mods-unpacked/RyehJael-Dissonance/extensions/dissonance_difficulty_records.gd")
+const CASH_COW_VARIANT_ITEM_IDS := [
+	"item_cash_cow",
+	"item_cash_cow_rare",
+	"item_cash_cow_epic",
+	"item_cash_cow_legendary"
+]
 var conductor_level_shift_hash = Keys.generate_hash("effect_conductor_level_shift")
 var siren_character_hash = Keys.generate_hash("character_siren")
 var influencer_character_hash = Keys.generate_hash("character_influencer")
 var producer_character_hash = Keys.generate_hash("character_producer")
 var cash_cow_item_hash = Keys.generate_hash("item_cash_cow")
+var cash_cow_rare_item_hash = Keys.generate_hash("item_cash_cow_rare")
+var cash_cow_epic_item_hash = Keys.generate_hash("item_cash_cow_epic")
+var cash_cow_legendary_item_hash = Keys.generate_hash("item_cash_cow_legendary")
 var black_notebook_item_hash = Keys.generate_hash("item_black_notebook")
 var disturbing_photo_item_hash = Keys.generate_hash("item_disturbing_photo")
 var chal_unlock_conductor_hash = Keys.generate_hash("chal_unlock_conductor")
@@ -41,6 +50,12 @@ func init_tracked_effects() -> Dictionary:
 		tracked_effects[producer_character_hash] = 0
 	if not tracked_effects.has(cash_cow_item_hash):
 		tracked_effects[cash_cow_item_hash] = 0
+	if not tracked_effects.has(cash_cow_rare_item_hash):
+		tracked_effects[cash_cow_rare_item_hash] = 0
+	if not tracked_effects.has(cash_cow_epic_item_hash):
+		tracked_effects[cash_cow_epic_item_hash] = 0
+	if not tracked_effects.has(cash_cow_legendary_item_hash):
+		tracked_effects[cash_cow_legendary_item_hash] = 0
 	if not tracked_effects.has(black_notebook_item_hash):
 		tracked_effects[black_notebook_item_hash] = 0
 	if not tracked_effects.has(disturbing_photo_item_hash):
@@ -88,8 +103,16 @@ func add_character(character: CharacterData, player_index: int) -> void:
 func add_item(item: ItemData, player_index: int, is_selection: bool = false) -> void:
 	if not _is_dissonance_valid_player_index(player_index):
 		return
+	if _is_cash_cow_variant_item(item) and _get_cash_cow_variant_count(player_index) > 0:
+		return
 	.add_item(item, player_index, is_selection)
 	_try_complete_dissonance_stat_challenges(player_index)
+
+
+func get_remaining_max_nb_item(item_data: ItemData, player_index: int) -> int:
+	if _is_cash_cow_variant_item(item_data):
+		return max(0, 1 - _get_cash_cow_variant_count(player_index)) as int
+	return .get_remaining_max_nb_item(item_data, player_index)
 
 
 func add_weapon(weapon: WeaponData, player_index: int, is_starting_weapon: bool = false):
@@ -121,6 +144,21 @@ func _get_dissonance_dummy_player_effects() -> Dictionary:
 
 func _is_dissonance_valid_player_index(player_index: int) -> bool:
 	return player_index >= 0 and player_index < players_data.size()
+
+
+func _is_cash_cow_variant_item(item) -> bool:
+	return item != null and item is ItemData and CASH_COW_VARIANT_ITEM_IDS.has(item.my_id)
+
+
+func _get_cash_cow_variant_count(player_index: int) -> int:
+	if not _is_dissonance_valid_player_index(player_index):
+		return 0
+
+	var count := 0
+	for item in get_player_items_ref(player_index):
+		if _is_cash_cow_variant_item(item):
+			count += 1
+	return count
 
 
 func _try_complete_dissonance_stat_challenges(player_index: int) -> void:

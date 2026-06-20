@@ -2,10 +2,10 @@
 
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow.tscn" type="PackedScene" id=1]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_effect.gd" type="Script" id=2]
-[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_calf_shadow.png" type="Texture" id=3]
-[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_calf_body.png" type="Texture" id=4]
-[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_calf_head_0.png" type="Texture" id=5]
-[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_calf_head_1.png" type="Texture" id=6]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_legendary_shadow.png" type="Texture" id=3]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_legendary_body.png" type="Texture" id=4]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_legendary_head_0.png" type="Texture" id=5]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_legendary_head_1.png" type="Texture" id=6]
 
 [resource]
 script = ExtResource( 2 )
@@ -18,13 +18,13 @@ effect_sign = 3
 custom_args = [  ]
 scene = ExtResource( 1 )
 is_structure = false
-growth_percent = 10
-max_health = 10
+growth_percent = 40
+max_health = 40
 health_boost = 1.0
 heal_regen_ratio = 0.5
 healing_range = 150.0
-variant_index = 0
-tracking_item_id = "item_cash_cow"
+variant_index = 3
+tracking_item_id = "item_cash_cow_legendary"
 shadow_texture = ExtResource( 3 )
 body_texture = ExtResource( 4 )
 head_texture_0 = ExtResource( 5 )

@@ -15,21 +15,29 @@ const BATON_BASE_INTERVALS = {
 	Tier.RARE: 16,
 	Tier.LEGENDARY: 12,
 }
-const CASH_COW_ITEM_ID = "item_cash_cow"
-const CASH_COW_BASE_GROWTH_PERCENT = 15
+const CASH_COW_ITEM_IDS = [
+	"item_cash_cow",
+	"item_cash_cow_rare",
+	"item_cash_cow_epic",
+	"item_cash_cow_legendary"
+]
 
 
 func curse_item(item_data: ItemParentData, player_index: int, turn_randomization_off: bool = false, min_modifier: float = 0.0) -> ItemParentData:
 	var cursed_item = .curse_item(item_data, player_index, turn_randomization_off, min_modifier)
 	if _is_baton(item_data) and cursed_item != item_data:
 		_rebalance_cursed_baton(cursed_item)
-	elif item_data.my_id == CASH_COW_ITEM_ID and cursed_item != item_data:
+	elif _is_cash_cow(item_data) and cursed_item != item_data:
 		_rebalance_cursed_cash_cow(cursed_item)
 	return cursed_item
 
 
 func _is_baton(item_data: ItemParentData) -> bool:
 	return item_data is WeaponData and item_data.weapon_id == BATON_WEAPON_ID
+
+
+func _is_cash_cow(item_data: ItemParentData) -> bool:
+	return item_data != null and item_data is ItemData and CASH_COW_ITEM_IDS.has(item_data.my_id)
 
 
 func _rebalance_cursed_baton(item_data: ItemParentData) -> void:
@@ -64,5 +72,5 @@ func _rebalance_cursed_cash_cow(item_data: ItemParentData) -> void:
 
 	for effect in item_data.effects:
 		if effect.get_id() == "cash_cow":
-			effect.set("growth_percent", int(ceil(CASH_COW_BASE_GROWTH_PERCENT * (1.0 + curse_modifier * 0.5))))
-			effect.set("health_boost", 1.0 + curse_modifier * 0.25)
+			effect.set("growth_percent", int(ceil(int(effect.get("growth_percent")) * (1.0 + curse_modifier * 0.5))))
+			effect.set("health_boost", float(effect.get("health_boost")) * (1.0 + curse_modifier * 0.25))

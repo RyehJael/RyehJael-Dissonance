@@ -1,5 +1,7 @@
 extends "res://singletons/player_run_data.gd"
 
+const COW_HEAD_ITEM_ID := "item_cow_head"
+
 var dissonance_influencer_purchase_count := 0
 
 
@@ -27,6 +29,7 @@ func duplicate() -> PlayerRunData:
 
 func serialize() -> Dictionary:
 	var serialized = .serialize()
+	serialized.items = _serialize_dissonance_items()
 	serialized.dissonance_influencer_purchase_count = dissonance_influencer_purchase_count
 	return serialized
 
@@ -35,3 +38,19 @@ func deserialize(data: Dictionary) -> PlayerRunData:
 	.deserialize(data)
 	dissonance_influencer_purchase_count = int(data.dissonance_influencer_purchase_count) if data.has("dissonance_influencer_purchase_count") else 0
 	return self
+
+
+func _serialize_dissonance_items() -> Array:
+	var serialized_items := []
+	var serialize_cache := {}
+	for item in items:
+		if item.is_cursed or item.my_id == COW_HEAD_ITEM_ID:
+			serialized_items.push_back(item.serialize())
+		else:
+			var serialized_item = serialize_cache.get(item.my_id)
+			if not serialized_item:
+				serialized_item = item.serialize()
+				serialize_cache[item.my_id] = serialized_item
+			serialized_items.push_back(serialized_item)
+
+	return serialized_items

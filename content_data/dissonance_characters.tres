@@ -1,4 +1,4 @@
-[gd_resource type="Resource" load_steps=23 format=2]
+[gd_resource type="Resource" load_steps=27 format=2]
 
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content_data/content_data.gd" type="Script" id=1]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/characters/conductor/conductor_data.tres" type="Resource" id=2]
@@ -22,10 +22,14 @@
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/disturbing_photo/disturbing_photo_data.tres" type="Resource" id=20]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/challenges/chal_influencer.tres" type="Resource" id=21]
 [ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/disturbing_photo/torn_photo_data.tres" type="Resource" id=22]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_rare_data.tres" type="Resource" id=23]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_epic_data.tres" type="Resource" id=24]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cash_cow_legendary_data.tres" type="Resource" id=25]
+[ext_resource path="res://mods-unpacked/RyehJael-Dissonance/content/items/cash_cow/cow_head_data.tres" type="Resource" id=26]
 
 [resource]
 script = ExtResource( 1 )
-items = [ ExtResource( 5 ), ExtResource( 14 ), ExtResource( 18 ), ExtResource( 20 ), ExtResource( 22 ) ]
+items = [ ExtResource( 5 ), ExtResource( 14 ), ExtResource( 23 ), ExtResource( 24 ), ExtResource( 25 ), ExtResource( 26 ), ExtResource( 18 ), ExtResource( 20 ), ExtResource( 22 ) ]
 weapons = [  ]
 characters = [ ExtResource( 2 ), ExtResource( 3 ), ExtResource( 4 ), ExtResource( 7 ), ExtResource( 8 ), ExtResource( 15 ) ]
 weapons_characters = [  ]
