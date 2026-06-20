@@ -167,8 +167,57 @@ func _consume_disturbing_photo(player_index: int) -> void:
 	if photo_item == null:
 		return
 
+	var original_replacement = photo_item.replaced_by
+	photo_item.replaced_by = _get_torn_photo_replacement(photo_item)
 	RunData.remove_item(photo_item, player_index)
+	photo_item.replaced_by = original_replacement
 	_get_gear_container(player_index).set_items_data(RunData.get_player_items(player_index))
+
+
+func _get_torn_photo_replacement(photo_item: ItemData) -> ItemData:
+	if photo_item.replaced_by == null:
+		return null
+
+	var torn_photo = photo_item.replaced_by.duplicate(true) as ItemData
+	if torn_photo == null:
+		return photo_item.replaced_by as ItemData
+
+	torn_photo.is_cursed = photo_item.is_cursed
+	torn_photo.curse_factor = photo_item.curse_factor
+	_copy_disturbing_photo_effect(photo_item, torn_photo, Keys.stat_harvesting_hash, "stat_harvesting")
+	_copy_disturbing_photo_effect(photo_item, torn_photo, Keys.stat_curse_hash, "stat_curse")
+
+	return torn_photo
+
+
+func _copy_disturbing_photo_effect(source_item: ItemData, target_item: ItemData, key_hash: int, key: String) -> void:
+	var source_effect = _get_disturbing_photo_effect(source_item.effects, key_hash, key)
+	if source_effect == null:
+		return
+
+	var copied_effect = source_effect.duplicate(true)
+	if copied_effect != null and copied_effect.has_method("_generate_hashes"):
+		copied_effect._generate_hashes()
+	var target_effect_index = _get_disturbing_photo_effect_index(target_item.effects, key_hash, key)
+	if target_effect_index == -1:
+		target_item.effects.push_back(copied_effect)
+	else:
+		target_item.effects[target_effect_index] = copied_effect
+
+
+func _get_disturbing_photo_effect(effects: Array, key_hash: int, key: String):
+	var effect_index = _get_disturbing_photo_effect_index(effects, key_hash, key)
+	if effect_index == -1:
+		return null
+	return effects[effect_index]
+
+
+func _get_disturbing_photo_effect_index(effects: Array, key_hash: int, key: String) -> int:
+	for index in effects.size():
+		var effect = effects[index]
+		if effect != null and (effect.key_hash == key_hash or effect.key == key):
+			return index
+	return -1
 
 
 func _get_player_disturbing_photo(player_index: int) -> ItemData:
