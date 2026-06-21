@@ -42,10 +42,13 @@ onready var life_bar = $"%LifeBar" as UIProgressBar
 
 
 func _ready() -> void:
+	_reset_pet_ready_signal_connections()
 	._ready()
 	_replace_head_animation_textures()
 	_apply_cash_cow_textures()
 	_animation_player.play("move")
+	if is_connected("health_updated", self, "on_health_updated"):
+		disconnect("health_updated", self, "on_health_updated")
 	var _error_hp_lifebar = connect("health_updated", self, "on_health_updated")
 
 
@@ -146,13 +149,16 @@ func die(args := Entity.DieArgs.new()) -> void:
 	if dead:
 		return
 
-	var dropped_materials := held_materials
-	_drop_held_materials()
-	_transform_into_cow_head(dropped_materials)
-	SoundManager.play(sound_dying, 0, 0.1)
 	dead = true
 	_pending_die = true
 	_hurtbox.disable()
+	_disable_item_areas()
+
+	var dropped_materials := held_materials
+	_drop_held_materials()
+	_release_attracted_gold()
+	_transform_into_cow_head(dropped_materials)
+	SoundManager.play(sound_dying, 0, 0.1)
 	emit_signal("died", self, args)
 	_remove_from_map()
 
@@ -394,12 +400,52 @@ func _apply_cash_cow_textures() -> void:
 
 
 func _remove_from_map() -> void:
+	_release_attracted_gold()
+	if _target_behavior != null and _target_behavior.has_method("_disconnect_current_target"):
+		_target_behavior._disconnect_current_target()
 	if _entity_spawner_ref != null:
 		_entity_spawner_ref.pets.erase(self)
 		_entity_spawner_ref.targetable_pets.erase(self)
 
 	hide()
 	queue_free()
+
+
+func _release_attracted_gold() -> void:
+	var main = get_tree().current_scene
+	if main == null or not ("_active_golds" in main):
+		return
+
+	for gold in main._active_golds:
+		if gold != null and is_instance_valid(gold) and gold.attracted_by == self:
+			gold.attracted_by = null
+
+
+func _disable_item_areas() -> void:
+	var item_attract_area = get_node_or_null("ItemAttractArea") as Area2D
+	if item_attract_area != null:
+		item_attract_area.set_deferred("monitoring", false)
+
+	var item_pick_up_area = get_node_or_null("ItemPickUpArea") as Area2D
+	if item_pick_up_area != null:
+		item_pick_up_area.set_deferred("monitoring", false)
+
+
+func _reset_pet_ready_signal_connections() -> void:
+	var main = get_tree().current_scene
+	if main == null:
+		return
+
+	if "_pause_menu" in main and main._pause_menu != null:
+		var menu_options = main._pause_menu._menu_options
+		if menu_options != null:
+			if menu_options.is_connected("pet_highlighting_changed", self, "update_highlight"):
+				menu_options.disconnect("pet_highlighting_changed", self, "update_highlight")
+			if menu_options.is_connected("pet_transparency_changed", self, "_update_transparency"):
+				menu_options.disconnect("pet_transparency_changed", self, "_update_transparency")
+
+	if main.is_connected("end_of_the_wave", self, "end_of_wave_callback"):
+		main.disconnect("end_of_the_wave", self, "end_of_wave_callback")
 
 
 func _replace_head_animation_textures() -> void:

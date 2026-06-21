@@ -92,7 +92,7 @@ func _init():
 		"ITEM_TORN_PHOTO": "Torn Photo",
 		"EFFECT_TORN_PHOTO": "The photo has been torn",
 		"CASH_COW_NAME": "Cash Cow",
-		"CASH_COW_BEHAVIOUR_DESCRIPTION": "Moves toward materials and eats them. While you are nearby, it cannot move and heals from half your HP Regeneration rate. Enemies can target and kill it. When killed, it drops all held materials, leaves the map, and its item becomes a Cow Head."
+		"CASH_COW_BEHAVIOUR_DESCRIPTION": "Moves toward materials and eats them. While you are nearby, it cannot move and heals from half your HP Regeneration rate. Enemies damage it on contact. When killed, it drops all held materials, leaves the map, and its item becomes a Cow Head."
 	}
 
 	ModLoaderMod.install_script_extension(ext_dir + "main.gd")

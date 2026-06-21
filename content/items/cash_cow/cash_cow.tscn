@@ -23,7 +23,7 @@ radius = 150.0
 [node name="CashCow" instance=ExtResource( 1 )]
 script = ExtResource( 2 )
 stats = ExtResource( 3 )
-can_be_targeted_by_enemies = true
+can_be_targeted_by_enemies = false
 sound_dying = ExtResource( 25 )
 sound_rising = ExtResource( 26 )
 sound_pet = ExtResource( 26 )

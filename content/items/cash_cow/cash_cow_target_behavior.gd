@@ -25,8 +25,11 @@ func update_target() -> void:
 	for gold in _main._active_golds:
 		if gold.already_picked_up:
 			continue
-		if gold.attracted_by != null and gold.attracted_by != _parent:
-			continue
+		if gold.attracted_by != null:
+			if not is_instance_valid(gold.attracted_by):
+				gold.attracted_by = null
+			elif gold.attracted_by != _parent:
+				continue
 
 		var dist_squared = global_position.distance_squared_to(gold.global_position)
 		if dist_squared < min_dist_squared:
@@ -52,5 +55,5 @@ func on_gold_spawned() -> void:
 
 
 func _disconnect_current_target() -> void:
-	if _parent.current_target is Gold and _parent.current_target.is_connected("picked_up", self, "on_gold_picked_up"):
+	if is_instance_valid(_parent.current_target) and _parent.current_target is Gold and _parent.current_target.is_connected("picked_up", self, "on_gold_picked_up"):
 		_parent.current_target.disconnect("picked_up", self, "on_gold_picked_up")
