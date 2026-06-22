@@ -80,7 +80,7 @@ func _init():
 		"EFFECT_BATON_STAT_SHIFT": "Every {0} enemies killed by this weapon in a wave: {1} from your highest stat, {2} to your lowest stat",
 		"ITEM_CASH_CALF": "Cash Calf",
 		"ITEM_CASH_COW": "Cash Cow",
-		"EFFECT_CASH_COW": "Spawns a Cash Cow that eats and stores materials. At the end of each wave, held materials increase by {0}%. It has {2} Max HP. While you are nearby, it cannot move and heals at {1}% of your HP Regeneration rate. When killed, drops all stored materials and becomes a Cow Head.",
+		"EFFECT_CASH_COW": "Spawns a Cash Cow that eats and stores materials. At the end of each wave, held materials increase by {0}%. It has {2} Max HP ({3}% of yours). While you are nearby, it cannot move and heals at {1}% of your HP Regeneration rate. When killed, drops all stored materials and becomes a Cow Head.",
 		"MATERIALS_HELD": "Materials held: {0}",
 		"ITEM_COW_HEAD": "Cow Head",
 		"MATERIALS_DROPPED": "Materials dropped: {0}",

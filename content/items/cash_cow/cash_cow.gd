@@ -359,13 +359,29 @@ func _apply_effect_stats(preserve_health: bool) -> void:
 
 	var previous_max_health := max(1, max_stats.health)
 	var previous_health := max(1, current_stats.health)
-	var effect_max_health := int(ceil(float(_effect.get("max_health")) * float(_effect.get("health_boost"))))
+	var effect_max_health := _get_effect_max_health()
 	max_stats.health = max(1, effect_max_health)
 	if preserve_health:
 		var gained_max_health := max(0, max_stats.health - previous_max_health)
 		current_stats.health = int(min(max_stats.health, previous_health + gained_max_health))
 	else:
 		current_stats.health = max_stats.health
+
+
+func _get_effect_max_health() -> int:
+	var player_max_health := _get_owner_max_health()
+	var health_percent := float(_effect.get("player_max_health_percent")) * float(_effect.get("health_boost"))
+	return int(max(1, int(ceil(player_max_health * (health_percent / 100.0)))))
+
+
+func _get_owner_max_health() -> int:
+	if player_index >= 0 and player_index < players_ref.size():
+		var owner = players_ref[player_index]
+		if owner != null and is_instance_valid(owner):
+			return int(max(1, int(owner.max_stats.health)))
+	if player_index >= 0 and player_index < RunData.players_data.size():
+		return int(max(1, RunData.get_player_max_health(player_index)))
+	return int(PlayerRunData.DEFAULT_MAX_HP)
 
 
 func _apply_effect_textures(effect) -> void:
